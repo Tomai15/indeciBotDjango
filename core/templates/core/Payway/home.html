@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Reportes Payway{% endblock %}
+
+{% block content %}
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="text-center">
+        <!-- Título de bienvenida -->
+        <h1 class="display-4 fw-bold text-primary mb-4">
+            Gestion payway
+        </h1>
+
+        <p class="lead text-muted mb-5">
+            Gestiona y genera reportes de transacciones de ecommerce de forma sencilla
+        </p>
+
+        <!-- Botón principal -->
+        <a href="#" class="btn btn-primary btn-lg px-5 py-3 shadow-lg" id="btnCargarReportes">
+            <i class="bi bi-file-earmark-arrow-up me-2"></i>
+            Visualizar reportes generados
+        </a>
+        <a href="#" class="btn btn-primary btn-lg px-5 py-3 shadow-lg" id="btnCargarReportes">
+            <i class="bi bi-file-earmark-arrow-up me-2"></i>
+            Gestionar un nuevo reporte
+        </a>
+    </div>
+</div>
+{% endblock %}
+

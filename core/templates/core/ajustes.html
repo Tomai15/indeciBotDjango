@@ -1,0 +1,265 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Ajustes - Sistema de Reportes{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header con botón volver -->
+    <header class="row mb-4">
+        <div class="col-12 mb-3">
+            <a href="{% url 'home' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver al inicio
+            </a>
+        </div>
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-primary">
+                <i class="bi bi-gear-fill me-2"></i>
+                Ajustes del Sistema
+            </h1>
+            <p class="text-muted">Gestione las credenciales de acceso a las diferentes plataformas</p>
+        </div>
+    </header>
+
+    <!-- Mensajes de Django -->
+    {% if messages %}
+        <div class="row mb-4">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {% if message.tags == 'error' or message.tags == 'danger' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Alerta informativa -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning border-warning" role="alert">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-shield-lock-fill fs-4 me-3 text-warning"></i>
+                    <div>
+                        <h6 class="alert-heading fw-bold mb-2">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Seguridad de Credenciales
+                        </h6>
+                        <p class="mb-0">
+                            Las credenciales se almacenan de forma segura en la base de datos.
+                            Asegúrese de mantener sus contraseñas actualizadas y no compartirlas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formularios de Credenciales -->
+    <div class="row g-4">
+        <!-- Credenciales Payway -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-2 h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-credit-card me-2"></i>
+                        Credenciales Payway
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if tiene_payway %}
+                        <div class="alert alert-success mb-3" role="alert">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <small>Credenciales configuradas</small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <small>No hay credenciales configuradas. Complete el formulario para agregar.</small>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Usuario Payway -->
+                        <div class="mb-4">
+                            <label for="{{ form_payway.usuario.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-person-fill text-primary me-2"></i>
+                                {{ form_payway.usuario.label }}
+                            </label>
+                            {{ form_payway.usuario }}
+                            {% if form_payway.usuario.help_text %}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {{ form_payway.usuario.help_text }}
+                                </div>
+                            {% endif %}
+                            {% if form_payway.usuario.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    {{ form_payway.usuario.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Contraseña Payway -->
+                        <div class="mb-4">
+                            <label for="{{ form_payway.clave.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-lock-fill text-primary me-2"></i>
+                                {{ form_payway.clave.label }}
+                            </label>
+                            {{ form_payway.clave }}
+                            {% if form_payway.clave.help_text %}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {{ form_payway.clave.help_text }}
+                                </div>
+                            {% endif %}
+                            {% if form_payway.clave.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    {{ form_payway.clave.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botón guardar Payway -->
+                        <button type="submit" name="payway_submit" class="btn btn-primary btn-lg w-100 shadow">
+                            <i class="bi bi-save me-2"></i>
+                            Guardar Credenciales Payway
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credenciales CDP -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-2 h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-database me-2"></i>
+                        Credenciales CDP
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if tiene_cdp %}
+                        <div class="alert alert-success mb-3" role="alert">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <small>Credenciales configuradas</small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <small>No hay credenciales configuradas. Complete el formulario para agregar.</small>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Usuario CDP -->
+                        <div class="mb-4">
+                            <label for="{{ form_cdp.usuario.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-person-fill text-success me-2"></i>
+                                {{ form_cdp.usuario.label }}
+                            </label>
+                            {{ form_cdp.usuario }}
+                            {% if form_cdp.usuario.help_text %}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {{ form_cdp.usuario.help_text }}
+                                </div>
+                            {% endif %}
+                            {% if form_cdp.usuario.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    {{ form_cdp.usuario.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Contraseña CDP -->
+                        <div class="mb-4">
+                            <label for="{{ form_cdp.clave.id_for_label }}" class="form-label fw-bold">
+                                <i class="bi bi-lock-fill text-success me-2"></i>
+                                {{ form_cdp.clave.label }}
+                            </label>
+                            {{ form_cdp.clave }}
+                            {% if form_cdp.clave.help_text %}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {{ form_cdp.clave.help_text }}
+                                </div>
+                            {% endif %}
+                            {% if form_cdp.clave.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    {{ form_cdp.clave.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botón guardar CDP -->
+                        <button type="submit" name="cdp_submit" class="btn btn-success btn-lg w-100 shadow">
+                            <i class="bi bi-save me-2"></i>
+                            Guardar Credenciales CDP
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Información importante
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <small>Las credenciales se guardan automáticamente al hacer click en "Guardar"</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <small>Puede editar las credenciales en cualquier momento</small>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <small>Las contraseñas se ocultan por seguridad al editar</small>
+                                </li>
+                                <li class="mb-0">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <small>Necesita configurar Payway para generar reportes</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

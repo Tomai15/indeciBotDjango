@@ -1,0 +1,218 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Generar Reporte Payway{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header con botón volver -->
+    <header class="row mb-4">
+        <div class="col-12 mb-3">
+            <a href="{% url 'lista_reportes' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver a Reportes
+            </a>
+        </div>
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-primary">
+                <i class="bi bi-plus-circle me-2"></i>
+                Generar Nuevo Reporte
+            </h1>
+            <p class="text-muted">Complete el formulario para generar un reporte de transacciones de Payway</p>
+        </div>
+    </header>
+
+    <!-- Mensajes de Django -->
+    {% if messages %}
+        <div class="row mb-4">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {% if message.tags == 'error' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Alertas informativas -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <!-- Alerta de credenciales -->
+            <div class="alert alert-info border-info" role="alert">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-info-circle-fill fs-4 me-3 text-info"></i>
+                    <div>
+                        <h6 class="alert-heading fw-bold mb-2">
+                            <i class="bi bi-key me-1"></i>
+                            Recuerde configurar sus credenciales
+                        </h6>
+                        <p class="mb-0">
+                            Asegúrese de tener configuradas las credenciales de Payway en
+                            <a href="{% url 'ajustes' %}" class="alert-link fw-bold">Ajustes</a>
+                            antes de generar un reporte.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerta de visualización -->
+            <div class="alert alert-success border-success" role="alert">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-check-circle-fill fs-4 me-3 text-success"></i>
+                    <div>
+                        <h6 class="alert-heading fw-bold mb-2">
+                            <i class="bi bi-eye me-1"></i>
+                            Visualización de reportes
+                        </h6>
+                        <p class="mb-0">
+                            Podrá visualizar sus reportes en la pantalla de
+                            <a href="{% url 'lista_reportes' %}" class="alert-link fw-bold">Reportes Generados</a>.
+                            El reporte quedará en estado "Pendiente" hasta que se complete el procesamiento.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-2">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-range me-2"></i>
+                        Seleccione el rango de fechas
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <!-- Fecha de Inicio -->
+                        <div class="mb-4">
+                            <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label fs-5 fw-bold">
+                                <i class="bi bi-calendar-check text-success me-2"></i>
+                                {{ form.fecha_inicio.label }}
+                            </label>
+                            {{ form.fecha_inicio }}
+                            {% if form.fecha_inicio.help_text %}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {{ form.fecha_inicio.help_text }}
+                                </div>
+                            {% endif %}
+                            {% if form.fecha_inicio.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    {{ form.fecha_inicio.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Fecha de Fin -->
+                        <div class="mb-4">
+                            <label for="{{ form.fecha_fin.id_for_label }}" class="form-label fs-5 fw-bold">
+                                <i class="bi bi-calendar-x text-danger me-2"></i>
+                                {{ form.fecha_fin.label }}
+                            </label>
+                            {{ form.fecha_fin }}
+                            {% if form.fecha_fin.help_text %}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {{ form.fecha_fin.help_text }}
+                                </div>
+                            {% endif %}
+                            {% if form.fecha_fin.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    {{ form.fecha_fin.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                                <i class="bi bi-play-circle me-2"></i>
+                                Generar Reporte
+                            </button>
+                            <a href="{% url 'lista_reportes' %}" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna lateral con información adicional -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Información importante
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Las fechas no pueden ser futuras</small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>La fecha de inicio debe ser anterior o igual a la fecha de fin</small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>El reporte se procesará de forma asíncrona</small>
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Recibirá una notificación cuando esté listo</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 bg-light mt-3">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-question-circle text-primary me-2"></i>
+                        ¿Necesita ayuda?
+                    </h6>
+                    <p class="small text-muted mb-0">
+                        Si tiene problemas generando reportes, verifique que:
+                    </p>
+                    <ul class="small text-muted mt-2 mb-0">
+                        <li>Las credenciales estén configuradas</li>
+                        <li>Las fechas sean válidas</li>
+                        <li>Tenga conexión a internet</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
