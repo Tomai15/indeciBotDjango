@@ -3,10 +3,19 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # General
     path("", views.home, name="home"),
     path("ajustes", views.ajustes_view, name="ajustes"),
+
+    # Payway
     path("reportesPayway", views.reportePaywayListView.as_view(), name="lista_reportes"),
     path("reportesPayway/generar", views.generar_reporte_payway_view, name="generar_reporte"),
     path("reportesPayway/<int:pk>/", views.reportePaywayDetailView.as_view(), name="detalle_reporte"),
     path("reportesPayway/<int:pk>/reporteExcel/", views.exportar_reporte_excel, name="exportar_reporte"),
+
+    # VTEX
+    path("reportesVtex", views.reporteVtexListView.as_view(), name="lista_reportes_vtex"),
+    path("reportesVtex/generar", views.generar_reporte_vtex_view, name="generar_reporte_vtex"),
+    path("reportesVtex/<int:pk>/", views.reporteVtexDetailView.as_view(), name="detalle_reporte_vtex"),
+    path("reportesVtex/<int:pk>/reporteExcel/", views.exportar_reporte_vtex_excel, name="exportar_reporte_vtex_excel"),
 ]

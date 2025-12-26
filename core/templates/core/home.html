@@ -16,21 +16,23 @@
 
         <!-- Botones de navegación -->
         <nav aria-label="Opciones de reportes">
-            <a href="/reportesPayway" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
+            <a href="{% url 'lista_reportes' %}" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
                 <i class="bi bi-file-earmark-arrow-up me-2"></i>
                 Gestionar Reportes Payway
             </a>
-            <a href="#" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
+            <a href="{% url 'lista_reportes_vtex' %}" class="btn btn-success btn-lg px-5 py-3 shadow-lg">
                 <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                Gestionar Reportes Vtex
+                Gestionar Reportes VTEX
             </a>
-            <a href="#" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
+            <a href="#" class="btn btn-secondary btn-lg px-5 py-3 shadow-lg disabled" aria-disabled="true">
                 <i class="bi bi-file-earmark-arrow-up me-2"></i>
                 Gestionar Reportes CDP
+                <span class="badge bg-warning text-dark ms-2">Próximamente</span>
             </a>
-            <a href="#" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
+            <a href="#" class="btn btn-secondary btn-lg px-5 py-3 shadow-lg disabled" aria-disabled="true">
                 <i class="bi bi-file-earmark-arrow-up me-2"></i>
                 Gestionar Reportes Janis
+                <span class="badge bg-warning text-dark ms-2">Próximamente</span>
             </a>
         </nav>
     </article>

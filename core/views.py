@@ -8,8 +8,13 @@ import os
 
 from django_q.tasks import async_task
 
-from core.models import ReportePayway, UsuarioPayway, UsuarioCDP
-from core.forms import GenerarReportePaywayForm, CredencialesPaywayForm, CredencialesCDPForm
+from core.models import ReportePayway, ReporteVtex, UsuarioPayway, UsuarioCDP
+from core.forms import (
+    GenerarReportePaywayForm,
+    GenerarReporteVtexForm,
+    CredencialesPaywayForm,
+    CredencialesCDPForm
+)
 
 
 # Create your views here.
@@ -51,16 +56,16 @@ class reportePaywayDetailView(SingleObjectMixin, ListView):
 
 
 def exportar_reporte_excel(request, pk):
-
+    """Vista para exportar un reporte de Payway a Excel."""
     reporte = get_object_or_404(ReportePayway, pk=pk)
 
-    reporte.generar_reporter_excel()
-
-    nombre_archivo = f'reporte_{reporte.fecha_inicio}_to_{reporte.fecha_fin}.xlsx'
-    ruta_archivo = os.path.join('media', nombre_archivo)
+    # El modelo es responsable de generar el archivo y retornar su ruta
+    ruta_archivo = reporte.generar_reporter_excel()
 
     if not os.path.exists(ruta_archivo):
         raise Http404("El archivo no se generó correctamente")
+
+    nombre_archivo = os.path.basename(ruta_archivo)
 
     response = FileResponse(
         open(ruta_archivo, 'rb'),
@@ -134,6 +139,119 @@ def generar_reporte_payway_view(request):
 
     return render(request, 'core/Payway/generarReporte.html', {'form': form})
 
+
+# ==================== VISTAS VTEX ====================
+
+class reporteVtexListView(ListView):
+    """Vista de lista de reportes de VTEX con paginación."""
+    model = ReporteVtex
+    paginate_by = 50
+    template_name = 'core/Vtex/vistaReportes.html'
+    ordering = ['-id']
+
+
+class reporteVtexDetailView(SingleObjectMixin, ListView):
+    """
+    Vista de detalle de reporte VTEX con paginación server-side de transacciones.
+
+    Combina SingleObjectMixin (para obtener el reporte) con ListView (para paginar transacciones).
+    Esto permite manejar eficientemente reportes con miles de transacciones.
+    """
+    template_name = 'core/Vtex/detalleReporte.html'
+    paginate_by = 20  # Transacciones por página
+    context_object_name = 'transacciones'
+
+    def get(self, request, *args, **kwargs):
+        # Obtener el reporte (SingleObjectMixin)
+        self.object = self.get_object(queryset=ReporteVtex.objects.all())
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        # Obtener transacciones del reporte actual, ordenadas por fecha descendente
+        return self.object.transacciones.all().order_by('-fecha_hora')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Agregar el reporte al contexto
+        context['reporte'] = self.object
+        return context
+
+
+def exportar_reporte_vtex_excel(request, pk):
+    """Vista para exportar un reporte de VTEX a Excel."""
+    reporte = get_object_or_404(ReporteVtex, pk=pk)
+
+    # El modelo es responsable de generar el archivo y retornar su ruta
+    ruta_archivo = reporte.generar_reporter_excel()
+
+    if not os.path.exists(ruta_archivo):
+        raise Http404("El archivo no se generó correctamente")
+
+    nombre_archivo = os.path.basename(ruta_archivo)
+
+    response = FileResponse(
+        open(ruta_archivo, 'rb'),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+
+    return response
+
+
+def generar_reporte_vtex_view(request):
+    """
+    Vista para generar un nuevo reporte de VTEX.
+
+    Muestra un formulario para ingresar fechas y encola la generación del reporte.
+    """
+    if request.method == 'POST':
+        form = GenerarReporteVtexForm(request.POST)
+
+        if form.is_valid():
+            # Obtener fechas del formulario
+            fecha_inicio = form.cleaned_data['fecha_inicio']
+            fecha_fin = form.cleaned_data['fecha_fin']
+
+            # Formatear fechas para el servicio (DD/MM/YYYY)
+            fecha_inicio_str = fecha_inicio.strftime("%d/%m/%Y")
+            fecha_fin_str = fecha_fin.strftime("%d/%m/%Y")
+
+            # Crear el reporte en estado PENDIENTE
+            nuevo_reporte = ReporteVtex.objects.create(
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                estado=ReporteVtex.Estado.PENDIENTE
+            )
+
+            # Encolar tarea en Django-Q
+            try:
+                task_id = async_task(
+                    'core.tasks.generar_reporte_vtex_async',
+                    fecha_inicio_str,
+                    fecha_fin_str,
+                    nuevo_reporte.id  # Pasar solo el ID, no el objeto completo
+                )
+
+                messages.success(
+                    request,
+                    f'Reporte de VTEX encolado exitosamente. Puede visualizarlo en Reportes Generados.'
+                )
+
+                return redirect('lista_reportes_vtex')
+
+            except Exception as e:
+                messages.error(
+                    request,
+                    f'Error al crear el reporte de VTEX: {str(e)}'
+                )
+
+    else:
+        form = GenerarReporteVtexForm()
+
+    return render(request, 'core/Vtex/generarReporte.html', {'form': form})
+
+
+# ==================== VISTA DE AJUSTES ====================
 
 def ajustes_view(request):
     """
