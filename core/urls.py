@@ -18,4 +18,10 @@ urlpatterns = [
     path("reportesVtex/generar", views.generar_reporte_vtex_view, name="generar_reporte_vtex"),
     path("reportesVtex/<int:pk>/", views.reporteVtexDetailView.as_view(), name="detalle_reporte_vtex"),
     path("reportesVtex/<int:pk>/reporteExcel/", views.exportar_reporte_vtex_excel, name="exportar_reporte_vtex_excel"),
+
+    # CDP
+    path("reportesCDP", views.reporteCDPListView.as_view(), name="lista_reportes_cdp"),
+    path("reportesCDP/generar", views.generar_reporte_cdp_view, name="generar_reporte_cdp"),
+    path("reportesCDP/<int:pk>/", views.reporteCDPDetailView.as_view(), name="detalle_reporte_cdp"),
+    path("reportesCDP/<int:pk>/reporteExcel/", views.exportar_reporte_cdp_excel, name="exportar_reporte_cdp_excel"),
 ]

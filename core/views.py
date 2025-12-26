@@ -8,10 +8,11 @@ import os
 
 from django_q.tasks import async_task
 
-from core.models import ReportePayway, ReporteVtex, UsuarioPayway, UsuarioCDP
+from core.models import ReportePayway, ReporteVtex, ReporteCDP, UsuarioPayway, UsuarioCDP
 from core.forms import (
     GenerarReportePaywayForm,
     GenerarReporteVtexForm,
+    GenerarReporteCDPForm,
     CredencialesPaywayForm,
     CredencialesCDPForm
 )
@@ -305,3 +306,125 @@ def ajustes_view(request):
     }
 
     return render(request, 'core/ajustes.html', context)
+
+
+# ==================== VISTAS CDP ====================
+
+class reporteCDPListView(ListView):
+    """Vista de lista de reportes de CDP con paginación."""
+    model = ReporteCDP
+    paginate_by = 50
+    template_name = 'core/CDP/vistaReportes.html'
+    ordering = ['-id']
+
+
+class reporteCDPDetailView(SingleObjectMixin, ListView):
+    """
+    Vista de detalle de reporte CDP con paginación server-side de transacciones.
+
+    Combina SingleObjectMixin (para obtener el reporte) con ListView (para paginar transacciones).
+    Esto permite manejar eficientemente reportes con miles de transacciones.
+    """
+    template_name = 'core/CDP/detalleReporte.html'
+    paginate_by = 20  # Transacciones por página
+    context_object_name = 'transacciones'
+
+    def get(self, request, *args, **kwargs):
+        # Obtener el reporte (SingleObjectMixin)
+        self.object = self.get_object(queryset=ReporteCDP.objects.all())
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        # Obtener transacciones del reporte actual, ordenadas por fecha descendente
+        return self.object.transacciones.all().order_by('-fecha_hora')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Agregar el reporte al contexto
+        context['reporte'] = self.object
+        return context
+
+
+def exportar_reporte_cdp_excel(request, pk):
+    """Vista para exportar un reporte de CDP a Excel."""
+    reporte = get_object_or_404(ReporteCDP, pk=pk)
+
+    # El modelo es responsable de generar el archivo y retornar su ruta
+    ruta_archivo = reporte.generar_reporter_excel()
+
+    if not os.path.exists(ruta_archivo):
+        raise Http404("El archivo no se generó correctamente")
+
+    nombre_archivo = os.path.basename(ruta_archivo)
+
+    response = FileResponse(
+        open(ruta_archivo, 'rb'),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+
+    return response
+
+
+def generar_reporte_cdp_view(request):
+    """
+    Vista para generar un nuevo reporte de CDP.
+
+    Muestra un formulario para ingresar fechas y encola la generación del reporte.
+    """
+    if request.method == 'POST':
+        form = GenerarReporteCDPForm(request.POST)
+
+        if form.is_valid():
+            # Verificar que existan credenciales configuradas
+            credenciales = UsuarioCDP.objects.first()
+
+            if not credenciales:
+                messages.error(
+                    request,
+                    'No hay credenciales de CDP configuradas. '
+                    'Por favor, configure las credenciales en Ajustes antes de generar un reporte.'
+                )
+                return render(request, 'core/CDP/generarReporte.html', {'form': form})
+
+            # Obtener fechas del formulario
+            fecha_inicio = form.cleaned_data['fecha_inicio']
+            fecha_fin = form.cleaned_data['fecha_fin']
+
+            # Formatear fechas para el servicio (DD/MM/YYYY)
+            fecha_inicio_str = fecha_inicio.strftime("%d/%m/%Y")
+            fecha_fin_str = fecha_fin.strftime("%d/%m/%Y")
+
+            # Crear el reporte en estado PENDIENTE
+            nuevo_reporte = ReporteCDP.objects.create(
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                estado=ReporteCDP.Estado.PENDIENTE
+            )
+
+            # Encolar tarea en Django-Q
+            try:
+                task_id = async_task(
+                    'core.tasks.generar_reporte_cdp_async',
+                    fecha_inicio_str,
+                    fecha_fin_str,
+                    nuevo_reporte.id  # Pasar solo el ID, no el objeto completo
+                )
+
+                messages.success(
+                    request,
+                    f'Reporte de CDP encolado exitosamente. Puede visualizarlo en Reportes Generados.'
+                )
+
+                return redirect('lista_reportes_cdp')
+
+            except Exception as e:
+                messages.error(
+                    request,
+                    f'Error al crear el reporte de CDP: {str(e)}'
+                )
+
+    else:
+        form = GenerarReporteCDPForm()
+
+    return render(request, 'core/CDP/generarReporte.html', {'form': form})

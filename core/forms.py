@@ -226,3 +226,27 @@ class GenerarReporteVtexForm(RangoFechasFormMixin, forms.Form):
         }),
         help_text='Fecha hasta la cual se generará el reporte'
     )
+
+
+class GenerarReporteCDPForm(RangoFechasFormMixin, forms.Form):
+    """Formulario para generar un reporte de CDP."""
+
+    fecha_inicio = forms.DateField(
+        label='Fecha de Inicio',
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control form-control-lg',
+            'placeholder': 'Seleccione fecha de inicio'
+        }),
+        help_text='Fecha desde la cual se generará el reporte'
+    )
+
+    fecha_fin = forms.DateField(
+        label='Fecha de Fin',
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control form-control-lg',
+            'placeholder': 'Seleccione fecha de fin'
+        }),
+        help_text='Fecha hasta la cual se generará el reporte'
+    )
