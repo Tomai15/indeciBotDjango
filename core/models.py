@@ -134,6 +134,32 @@ class ReporteCDP(models.Model):
         data_frame_transacciones.to_excel(ruta_final, index=False)
         return ruta_final
 
+class ReporteJanis(models.Model):
+    class Estado(models.TextChoices):
+        PENDIENTE = 'PENDIENTE', _('Pendiente')
+        PROCESANDO = 'PROCESANDO', _('Procesando')
+        COMPLETADO = 'COMPLETADO', _('Completado')
+        ERROR = 'ERROR', _('Error')
+
+    estado = models.CharField(
+        max_length=15,
+        choices=Estado.choices,
+        default=Estado.PENDIENTE
+    )
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+
+    def generar_reporter_excel(self):
+        return
+class TransaccionJanis(models.Model):
+    numero_pedido = models.CharField(max_length=100)
+    numero_transaccion = models.CharField(max_length=100)
+    fecha_hora = models.DateTimeField()
+    medio_pago = models.CharField(max_length=100)
+    seller = models.CharField(max_length=100)
+    estado = models.CharField(max_length=100)
+    reporte = models.ForeignKey(ReporteJanis, on_delete=models.CASCADE, related_name='transacciones')
+
 
 class Cruce(models.Model):
     class Estado(models.TextChoices):
