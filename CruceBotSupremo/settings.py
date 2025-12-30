@@ -48,14 +48,14 @@ Q_CLUSTER = {
     'name': 'sistema_reportes',
     'workers': 4,        # Cuántas tareas simultáneas puede procesar
     'recycle': 500,      # Reinicia workers cada 500 tareas (libera memoria)
-    'timeout': 7200,       # Si una tarea tarda > 60s, se marca como fallida
+    'timeout': 7200,     # Si una tarea tarda > 2h, se marca como fallida
+    'retry': 86400,      # 24h - en la práctica nunca reintenta (debe ser > timeout)
     'orm': 'default',    # Usa tu DB, no Redis
     'save_limit': 250,   # Cuántas tareas exitosas guarda en el historial
     'queue_limit': 500,  # Límite de la cola
     'cpu_affinity': 1,   # Optimización de CPU
     'label': 'Django Q',
     'sync': False,       # Modo asíncrono: requiere worker separado
-    'retry': 7300
 }
 
 MIDDLEWARE = [

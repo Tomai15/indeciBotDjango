@@ -36,103 +36,118 @@
         <section class="row g-4">
             {% for cruce in object_list %}
             <div class="col-md-6 col-lg-4">
-                <article>
-                    <a href="{% url 'detalle_cruce' cruce.id %}" class="text-decoration-none">
-                        <div class="card h-100 shadow-sm border-2" style="cursor: pointer;">
-                            <div class="card-body">
-                                <!-- ID del Cruce -->
-                                <header class="text-center mb-3">
-                                    <span class="badge bg-purple fs-6 mb-2" style="background-color: #6f42c1;">CRUCE</span>
-                                    <div class="display-4 fw-bold text-primary">#{{ cruce.id }}</div>
+                <article class="card h-100 shadow-sm border-2">
+                    <div class="card-body">
+                        <!-- ID del Cruce -->
+                        <header class="text-center mb-3">
+                            <span class="badge bg-purple fs-6 mb-2" style="background-color: #6f42c1;">CRUCE</span>
+                            <div class="display-4 fw-bold text-primary">#{{ cruce.id }}</div>
 
-                                    <!-- Estado del Cruce -->
-                                    <div class="mt-2">
-                                        {% if cruce.estado == 'PENDIENTE' %}
-                                            <span class="badge bg-warning text-dark fs-6">
-                                                <i class="bi bi-clock-history me-1"></i>
-                                                Pendiente
-                                            </span>
-                                        {% elif cruce.estado == 'PROCESANDO' %}
-                                            <span class="badge bg-info text-dark fs-6">
-                                                <i class="bi bi-hourglass-split me-1"></i>
-                                                Procesando
-                                            </span>
-                                        {% elif cruce.estado == 'COMPLETADO' %}
-                                            <span class="badge bg-success fs-6">
-                                                <i class="bi bi-check-circle me-1"></i>
-                                                Completado
-                                            </span>
-                                        {% elif cruce.estado == 'ERROR' %}
-                                            <span class="badge bg-danger fs-6">
-                                                <i class="bi bi-exclamation-triangle me-1"></i>
-                                                Error
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-secondary fs-6">
-                                                <i class="bi bi-question-circle me-1"></i>
-                                                {{ cruce.estado }}
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                </header>
+                            <!-- Estado del Cruce -->
+                            <div class="mt-2">
+                                {% if cruce.estado == 'PENDIENTE' %}
+                                    <span class="badge bg-warning text-dark fs-6">
+                                        <i class="bi bi-clock-history me-1"></i>
+                                        Pendiente
+                                    </span>
+                                {% elif cruce.estado == 'PROCESANDO' %}
+                                    <span class="badge bg-info text-dark fs-6">
+                                        <i class="bi bi-hourglass-split me-1"></i>
+                                        Procesando
+                                    </span>
+                                {% elif cruce.estado == 'COMPLETADO' %}
+                                    <span class="badge bg-success fs-6">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Completado
+                                    </span>
+                                {% elif cruce.estado == 'ERROR' %}
+                                    <span class="badge bg-danger fs-6">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Error
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary fs-6">
+                                        <i class="bi bi-question-circle me-1"></i>
+                                        {{ cruce.estado }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </header>
 
-                                <hr>
+                        <hr>
 
-                                <!-- Fecha de Inicio -->
-                                <div class="bg-light rounded p-2 mb-3">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-calendar-check text-success fs-4 me-2"></i>
-                                        <div>
-                                            <small class="text-muted d-block">Fecha Inicio</small>
-                                            <strong>
-                                                <time datetime="{{ cruce.fecha_inicio|date:'Y-m-d' }}">
-                                                    {{ cruce.fecha_inicio|date:"d/m/Y" }}
-                                                </time>
-                                            </strong>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Fecha de Fin -->
-                                <div class="bg-light rounded p-2 mb-3">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-calendar-x text-danger fs-4 me-2"></i>
-                                        <div>
-                                            <small class="text-muted d-block">Fecha Fin</small>
-                                            <strong>
-                                                <time datetime="{{ cruce.fecha_fin|date:'Y-m-d' }}">
-                                                    {{ cruce.fecha_fin|date:"d/m/Y" }}
-                                                </time>
-                                            </strong>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Fecha Realizado -->
-                                <div class="bg-light rounded p-2">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-calendar-event text-primary fs-4 me-2"></i>
-                                        <div>
-                                            <small class="text-muted d-block">Fecha Realizado</small>
-                                            <strong>
-                                                <time datetime="{{ cruce.fecha_realizado|date:'Y-m-d' }}">
-                                                    {{ cruce.fecha_realizado|date:"d/m/Y" }}
-                                                </time>
-                                            </strong>
-                                        </div>
-                                    </div>
+                        <!-- Fecha de Inicio -->
+                        <div class="bg-light rounded p-2 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-calendar-check text-success fs-4 me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Fecha Inicio</small>
+                                    <strong>
+                                        <time datetime="{{ cruce.fecha_inicio|date:'Y-m-d' }}">
+                                            {{ cruce.fecha_inicio|date:"d/m/Y" }}
+                                        </time>
+                                    </strong>
                                 </div>
                             </div>
-
-                            <!-- Footer de la card -->
-                            <footer class="card-footer bg-light text-center">
-                                <small class="text-primary fw-bold">
-                                    <i class="bi bi-hand-index me-1"></i>
-                                    Click para ver detalles
-                                </small>
-                            </footer>
                         </div>
-                    </a>
+
+                        <!-- Fecha de Fin -->
+                        <div class="bg-light rounded p-2 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-calendar-x text-danger fs-4 me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Fecha Fin</small>
+                                    <strong>
+                                        <time datetime="{{ cruce.fecha_fin|date:'Y-m-d' }}">
+                                            {{ cruce.fecha_fin|date:"d/m/Y" }}
+                                        </time>
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fecha Realizado -->
+                        <div class="bg-light rounded p-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-calendar-event text-primary fs-4 me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Fecha Realizado</small>
+                                    <strong>
+                                        {% if cruce.fecha_realizado %}
+                                        <time datetime="{{ cruce.fecha_realizado|date:'Y-m-d' }}">
+                                            {{ cruce.fecha_realizado|date:"d/m/Y" }}
+                                        </time>
+                                        {% else %}
+                                        <span class="text-muted">Pendiente</span>
+                                        {% endif %}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer con acciones -->
+                    <footer class="card-footer bg-light">
+                        <div class="d-flex gap-2 justify-content-center flex-wrap">
+                            <a href="{% url 'detalle_cruce' cruce.id %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i>
+                                Ver
+                            </a>
+                            {% if cruce.estado == 'ERROR' %}
+                            <form method="post" action="{% url 'reintentar_cruce' cruce.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Reintentar
+                                </button>
+                            </form>
+                            {% endif %}
+                            <a href="{% url 'eliminar_cruce' cruce.id %}" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-trash me-1"></i>
+                                Eliminar
+                            </a>
+                        </div>
+                    </footer>
                 </article>
             </div>
             {% endfor %}

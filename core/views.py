@@ -1,7 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, View, DeleteView
 from django.views.generic.detail import SingleObjectMixin
 from django.http import FileResponse, Http404
+from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db.models import Sum, Count, Q
 import os
@@ -743,3 +744,156 @@ def generar_cruce_view(request):
         form = GenerarCruceForm()
 
     return render(request, 'core/Cruce/generarCruce.html', {'form': form})
+
+
+# ============================================================================
+# MIXINS Y CLASS-BASED VIEWS PARA REINTENTAR Y ELIMINAR
+# ============================================================================
+
+class ReporteRetryMixin:
+    """
+    Mixin que provee lógica común para reintentar reportes fallidos.
+
+    Las clases que hereden deben definir:
+        - model: El modelo del reporte (ReportePayway, ReporteVtex, etc.)
+        - task_name: Nombre de la tarea async ('core.tasks.generar_reporte_payway_async')
+        - success_url: URL a la que redirigir después del reintento
+    """
+    model = None
+    task_name = None
+    success_url = None
+
+    def post(self, request, pk):
+        reporte = get_object_or_404(self.model, pk=pk)
+
+        if reporte.estado != self.model.Estado.ERROR:
+            messages.warning(request, 'Solo se pueden reintentar reportes con estado ERROR.')
+            return redirect(self.success_url)
+
+        # Resetear estado
+        reporte.estado = self.model.Estado.PENDIENTE
+        reporte.save()
+
+        # Formatear fechas
+        fecha_inicio_str = reporte.fecha_inicio.strftime('%d/%m/%Y')
+        fecha_fin_str = reporte.fecha_fin.strftime('%d/%m/%Y')
+
+        # Encolar tarea
+        try:
+            async_task(self.task_name, fecha_inicio_str, fecha_fin_str, reporte.id)
+            messages.success(request, f'Reporte #{reporte.id} encolado para reintento.')
+        except Exception as e:
+            messages.error(request, f'Error al encolar reintento: {str(e)}')
+
+        return redirect(self.success_url)
+
+
+class ReporteDeleteMixin:
+    """
+    Mixin que provee lógica común para eliminar reportes.
+
+    Usa DeleteView de Django pero agrega mensaje de éxito.
+    Las clases que hereden deben definir:
+        - model: El modelo del reporte
+        - success_url: URL a la que redirigir
+    """
+    template_name = 'core/confirm_delete.html'  # Template genérico (opcional)
+
+    def form_valid(self, form):
+        reporte_id = self.object.id
+        response = super().form_valid(form)
+        messages.success(self.request, f'Reporte #{reporte_id} eliminado correctamente.')
+        return response
+
+
+# --- PAYWAY ---
+class ReportePaywayRetryView(ReporteRetryMixin, View):
+    model = ReportePayway
+    task_name = 'core.tasks.generar_reporte_payway_async'
+    success_url = 'lista_reportes'
+
+
+class ReportePaywayDeleteView(ReporteDeleteMixin, DeleteView):
+    model = ReportePayway
+    success_url = reverse_lazy('lista_reportes')
+
+
+# --- VTEX ---
+class ReporteVtexRetryView(ReporteRetryMixin, View):
+    model = ReporteVtex
+    task_name = 'core.tasks.generar_reporte_vtex_async'
+    success_url = 'lista_reportes_vtex'
+
+
+class ReporteVtexDeleteView(ReporteDeleteMixin, DeleteView):
+    model = ReporteVtex
+    success_url = reverse_lazy('lista_reportes_vtex')
+
+
+# --- CDP ---
+class ReporteCDPRetryView(ReporteRetryMixin, View):
+    model = ReporteCDP
+    task_name = 'core.tasks.generar_reporte_cdp_async'
+    success_url = 'lista_reportes_cdp'
+
+
+class ReporteCDPDeleteView(ReporteDeleteMixin, DeleteView):
+    model = ReporteCDP
+    success_url = reverse_lazy('lista_reportes_cdp')
+
+
+# --- JANIS ---
+class ReporteJanisRetryView(ReporteRetryMixin, View):
+    model = ReporteJanis
+    task_name = 'core.tasks.generar_reporte_janis_async'
+    success_url = 'lista_reportes_janis'
+
+
+class ReporteJanisDeleteView(ReporteDeleteMixin, DeleteView):
+    model = ReporteJanis
+    success_url = reverse_lazy('lista_reportes_janis')
+
+
+# --- CRUCES ---
+class CruceRetryView(View):
+    """
+    Vista para reintentar cruces fallidos.
+
+    Es diferente a los reportes porque usa los ForeignKeys
+    para obtener los IDs de los reportes relacionados.
+    """
+    def post(self, request, pk):
+        cruce = get_object_or_404(Cruce, pk=pk)
+
+        if cruce.estado != Cruce.Estado.ERROR:
+            messages.warning(request, 'Solo se pueden reintentar cruces con estado ERROR.')
+            return redirect('lista_cruces')
+
+        cruce.estado = Cruce.Estado.PENDIENTE
+        cruce.save()
+
+        try:
+            async_task(
+                'core.tasks.generar_cruce_async',
+                cruce.id,
+                cruce.reporte_vtex.id if cruce.reporte_vtex else None,
+                cruce.reporte_payway.id if cruce.reporte_payway else None,
+                cruce.reporte_cdp.id if cruce.reporte_cdp else None,
+                cruce.reporte_janis.id if cruce.reporte_janis else None
+            )
+            messages.success(request, f'Cruce #{cruce.id} encolado para reintento.')
+        except Exception as e:
+            messages.error(request, f'Error al encolar reintento: {str(e)}')
+
+        return redirect('lista_cruces')
+
+
+class CruceDeleteView(ReporteDeleteMixin, DeleteView):
+    model = Cruce
+    success_url = reverse_lazy('lista_cruces')
+
+    def form_valid(self, form):
+        cruce_id = self.object.id
+        response = super(DeleteView, self).form_valid(form)
+        messages.success(self.request, f'Cruce #{cruce_id} eliminado correctamente.')
+        return response
