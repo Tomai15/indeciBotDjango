@@ -352,6 +352,9 @@ class TransaccionJanis(models.Model):
     seller = models.CharField(max_length=100)
     estado = models.CharField(max_length=100)
     reporte = models.ForeignKey(ReporteJanis, on_delete=models.CASCADE, related_name='transacciones')
+    estados_entregado = ["delivered","inDelivery",
+                         "readyForDelivery","readyForInternalDistribution","en auditoria",
+                         "procesandoPromociones"]
 
     def convertir_en_diccionario(self):
         return {
@@ -362,6 +365,10 @@ class TransaccionJanis(models.Model):
             'seller': self.seller,
             'estado': self.estado
         }
+
+    def estado_entregado(self):
+
+        return any(estado_entregado in self.estado for estado_entregado in self.estados_entregado)
 
 
 class Cruce(models.Model):
@@ -399,7 +406,7 @@ class Cruce(models.Model):
         related_name='cruces', verbose_name='Reporte Janis'
     )
 
-    def generar_reporter_excel(self):
+    def generar_reporter_excel(self, solo_observaciones=False):
         """
         Genera el archivo Excel del cruce con múltiples hojas:
         - Cruce: Resultado del cruce de transacciones
@@ -408,14 +415,20 @@ class Cruce(models.Model):
         - CDP: Reporte CDP completo (si existe)
         - Janis: Reporte Janis completo (si existe)
 
+        Args:
+            solo_observaciones: Si es True, solo exporta transacciones con resultado_cruce
+
         Returns:
             str: Ruta completa del archivo Excel generado
         """
-        ruta_final = os.path.join(settings.MEDIA_ROOT, f'cruce_{self.fecha_inicio}_to_{self.fecha_fin}.xlsx')
+        sufijo = '_observaciones' if solo_observaciones else ''
+        ruta_final = os.path.join(settings.MEDIA_ROOT, f'cruce_{self.fecha_inicio}_to_{self.fecha_fin}{sufijo}.xlsx')
 
         with pd.ExcelWriter(ruta_final, engine='openpyxl') as writer:
             # Hoja principal: Cruce
             transacciones = self.transacciones.all()
+            if solo_observaciones:
+                transacciones = transacciones.exclude(resultado_cruce='').exclude(resultado_cruce__isnull=True)
             transacciones_convertidas = list(map(lambda t: t.convertir_en_diccionario(), transacciones))
             df_cruce = pd.DataFrame(transacciones_convertidas)
             if not df_cruce.empty and 'fecha' in df_cruce.columns:
@@ -479,6 +492,7 @@ class TransaccionCruce(models.Model):
     estado_payway_2 = models.CharField(max_length=100, blank=True, default='')
     estado_cdp = models.CharField(max_length=100, blank=True, default='')
     estado_janis = models.CharField(max_length=100, blank=True, default='')
+    resultado_cruce = models.CharField(max_length=255, blank=True, default='')
     cruce = models.ForeignKey(Cruce, on_delete=models.CASCADE, related_name='transacciones')
 
     def convertir_en_diccionario(self):
@@ -491,7 +505,8 @@ class TransaccionCruce(models.Model):
             'estado_payway': self.estado_payway,
             'estado_payway_2': self.estado_payway_2,
             'estado_cdp': self.estado_cdp,
-            'estado_janis': self.estado_janis
+            'estado_janis': self.estado_janis,
+            'resultado_cruce': self.resultado_cruce
         }
 
 
@@ -501,6 +516,9 @@ class TransaccionCDP(models.Model):
     numero_tienda = models.DecimalField(max_digits=10, decimal_places=2)
     estado = models.CharField(max_length=100)
     reporte = models.ForeignKey(ReporteCDP, on_delete=models.CASCADE, related_name='transacciones')
+    estados_entregados = ["finalizado", "disponible en drive", "disponible en sucursal",
+                          "disponible en sede","pendiente de despacho","pendiente de de envio a pup",
+                          "recepcion pendiente"]
 
     def convertir_en_diccionario(self):
         return {
@@ -509,6 +527,9 @@ class TransaccionCDP(models.Model):
             'numero_tienda': self.numero_tienda,
             'estado': self.estado
         }
+
+    def estado_entregado(self):
+        return any(keyword.lower() in self.estado.lower() for keyword in self.estados_entregados)
 
 
 
@@ -520,11 +541,12 @@ class TransaccionPayway(models.Model):
     estado = models.CharField(max_length=100)
     tarjeta = models.CharField(max_length=100)
     reporte = models.ForeignKey(ReportePayway, on_delete=models.CASCADE, related_name='transacciones')
-
+    estados_no_entregados = ["Pre autorizada", "Vencida"]
     def convertir_en_diccionario(self):
         return {'Transaccion': self.numero_transaccion, 'fecha': self.fecha_hora,
                 'monto': self.monto, 'estado': self.estado, 'tarjeta': self.tarjeta}
-
+    def estado_no_cobrado(self):
+        return any(keyword in self.estado for keyword in self.estados_no_entregados)
 
 class TransaccionVtex(models.Model):
     numero_pedido = models.CharField(max_length=100)
@@ -540,6 +562,7 @@ class TransaccionVtex(models.Model):
         blank=True,
         verbose_name='Valor del pedido'
     )
+    KEYWORDS_FOOD = ["carrefour", "hiper", "maxi", "market", "express", "trelew"]
     reporte = models.ForeignKey(ReporteVtex, on_delete=models.CASCADE, related_name='transacciones')
 
     def convertir_en_diccionario(self):
@@ -552,3 +575,13 @@ class TransaccionVtex(models.Model):
             'estado': self.estado,
             'valor': self.valor
         }
+    def pedido_electro(self) -> bool:
+        return self.seller == "Hogar & Electro"
+
+
+
+    def pedido_food(self):
+        return any(keyword.lower() in self.seller.lower() for keyword in self.KEYWORDS_FOOD)
+
+    def pedido_marketplace(self):
+        return not self.pedido_electro() and not self.pedido_food()

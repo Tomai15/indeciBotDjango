@@ -38,6 +38,9 @@ db.sqlite3-journal
 .env
 .env.local
 
+# Auto-update version tracking
+VERSION
+
 # IDE
 .vscode/
 .idea/

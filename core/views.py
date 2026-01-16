@@ -645,6 +645,7 @@ class cruceDetailView(SingleObjectMixin, ListView):
     Vista de detalle de cruce con paginación server-side de transacciones.
 
     Combina SingleObjectMixin (para obtener el cruce) con ListView (para paginar transacciones).
+    Soporta filtro ?solo_observaciones=1 para mostrar solo transacciones con resultado_cruce.
     """
     template_name = 'core/Cruce/detalleCruce.html'
     paginate_by = 20
@@ -652,23 +653,40 @@ class cruceDetailView(SingleObjectMixin, ListView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object(queryset=Cruce.objects.all())
+        # Guardar el estado del filtro
+        self.solo_observaciones = request.GET.get('solo_observaciones') == '1'
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return self.object.transacciones.all().order_by('-fecha_hora')
+        queryset = self.object.transacciones.all().order_by('-fecha_hora')
+        # Aplicar filtro si está activo
+        if self.solo_observaciones:
+            queryset = queryset.exclude(resultado_cruce='').exclude(resultado_cruce__isnull=True)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['cruce'] = self.object
+        context['solo_observaciones'] = self.solo_observaciones
+        # Contar transacciones con observaciones para mostrar en el botón
+        context['total_con_observaciones'] = self.object.transacciones.exclude(
+            resultado_cruce=''
+        ).exclude(resultado_cruce__isnull=True).count()
         return context
 
 
 def exportar_cruce_excel(request, pk):
-    """Vista para exportar un cruce a Excel."""
+    """Vista para exportar un cruce a Excel.
+
+    Soporta filtro ?solo_observaciones=1 para exportar solo transacciones con observaciones.
+    """
     cruce = get_object_or_404(Cruce, pk=pk)
 
+    # Verificar si hay filtro activo
+    solo_observaciones = request.GET.get('solo_observaciones') == '1'
+
     # El modelo es responsable de generar el archivo y retornar su ruta
-    ruta_archivo = cruce.generar_reporter_excel()
+    ruta_archivo = cruce.generar_reporter_excel(solo_observaciones=solo_observaciones)
 
     if not os.path.exists(ruta_archivo):
         raise Http404("El archivo no se generó correctamente")

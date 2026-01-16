@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from asgiref.sync import sync_to_async
 from datetime import date
+from typing import Any
 
 from core.models import (
     Cruce, TransaccionCruce,
@@ -17,11 +20,18 @@ logger = logging.getLogger(__name__)
 class CruceService:
     """Servicio para generar cruces de transacciones entre diferentes sistemas."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Inicializa el servicio de cruces."""
         pass
 
-    async def generar_cruce(self, cruce_id, reporte_vtex_id=None, reporte_payway_id=None, reporte_cdp_id=None, reporte_janis_id=None):
+    async def generar_cruce(
+        self,
+        cruce_id: int,
+        reporte_vtex_id: int | None = None,
+        reporte_payway_id: int | None = None,
+        reporte_cdp_id: int | None = None,
+        reporte_janis_id: int | None = None
+    ) -> bool:
         """
         Genera un cruce de transacciones entre los reportes seleccionados.
 
@@ -125,7 +135,13 @@ class CruceService:
                 pass
             return False
 
-    async def cruzar_transacciones(self, transacciones_vtex, transacciones_payway, transacciones_cdp, transacciones_janis):
+    async def cruzar_transacciones(
+        self,
+        transacciones_vtex: list[TransaccionVtex],
+        transacciones_payway: list[TransaccionPayway],
+        transacciones_cdp: list[TransaccionCDP],
+        transacciones_janis: list[TransaccionJanis]
+    ) -> list[dict[str, Any]]:
         """
         Cruza las transacciones de los diferentes sistemas.
 
@@ -145,8 +161,8 @@ class CruceService:
                   - estado_payway (opcional)
                   - estado_cdp (opcional)
                   - estado_janis (opcional)
+                  - resultado_cruce (opcional)
         """
-
         # Crear diccionarios indexados
         vtex_por_pedido = {t.numero_pedido: t for t in transacciones_vtex}
         cdp_por_pedido = {t.numero_pedido: t for t in transacciones_cdp}
@@ -223,6 +239,7 @@ class CruceService:
             if janis:
                 matches_janis += 1
 
+            resultado_cruce = self.calcular_resultado_cruce(vtex, payway, cdp, janis)
             transacciones_cruzadas.append({
                 'numero_pedido': pedido,
                 'fecha_hora': vtex.fecha_hora if vtex else None,
@@ -232,7 +249,8 @@ class CruceService:
                 'estado_payway': payway.estado if payway else 'N/A',
                 'estado_payway_2': payway2.estado if payway2 else 'N/A',
                 'estado_cdp': cdp.estado if cdp else 'N/A',
-                'estado_janis': janis.estado if janis else 'N/A'
+                'estado_janis': janis.estado if janis else 'N/A',
+                'resultado_cruce': resultado_cruce
             })
 
         # DEBUG: Resumen de matches
@@ -253,13 +271,17 @@ class CruceService:
 
         return transacciones_cruzadas
 
-    def convertir_pedido_transaccion_payway(self, pedido_vtex):
+    def convertir_pedido_transaccion_payway(self, pedido_vtex: str) -> str:
         partes = pedido_vtex.split('-')
 
         transaccion_payway = f"{partes[0]}-{int(partes[1])}"
         return transaccion_payway
 
-    async def guardar_transacciones_cruce(self, transacciones, cruce):
+    async def guardar_transacciones_cruce(
+        self,
+        transacciones: list[dict[str, Any]],
+        cruce: Cruce
+    ) -> int:
         """
         Guarda las transacciones cruzadas en la base de datos.
 
@@ -288,6 +310,7 @@ class CruceService:
                     estado_payway_2=str(row.get('estado_payway_2', '')),
                     estado_cdp=str(row.get('estado_cdp', '')),
                     estado_janis=str(row.get('estado_janis', '')),
+                    resultado_cruce=str(row.get('resultado_cruce', '')),
                     cruce=cruce
                 )
                 transacciones_objetos.append(transaccion)
@@ -305,3 +328,49 @@ class CruceService:
             logger.info(f"Guardadas {len(transacciones_objetos)} transacciones cruzadas")
 
         return len(transacciones_objetos)
+
+    def calcular_resultado_cruce(
+        self,
+        vtex: TransaccionVtex | None,
+        payway: TransaccionPayway | None,
+        cdp: TransaccionCDP | None,
+        janis: TransaccionJanis | None
+    ) -> str:
+        if not vtex:
+            return ""
+
+        if vtex.estado == "Verificando Fatura":
+            return "Verificar, estado en vtex verificando factura"
+
+        # Helper para verificar estado entregado de forma segura
+        cdp_entregado = cdp.estado_entregado() if cdp else False
+        janis_entregado = janis.estado_entregado() if janis else False
+        payway_no_cobrado = payway.estado_no_cobrado() if payway else False
+
+        if vtex.medio_pago and "MercadoPagoPro" in vtex.medio_pago and not (vtex.pedido_electro() or vtex.pedido_marketplace()):
+            # Logica de cruce MercadoPago
+            if cdp_entregado or janis_entregado:
+                if vtex.estado != "Faturado":
+                    return "Verificar, entregado pero no facturado"
+            return ""
+
+        elif vtex.pedido_food():
+            # Logica de cruce Food
+            if cdp_entregado or janis_entregado:
+                if vtex.estado != "Faturado":
+                    return "Verificar, entregado pero no facturado"
+                elif payway_no_cobrado:
+                    return "Verificar, no cobrado en Payway"
+            return ""
+
+        elif vtex.pedido_electro():
+            if payway_no_cobrado:
+                return "Verificar, no cobrado en Payway"
+            elif vtex.estado != "Faturado" and vtex.estado != "Cancelado":
+                return "Verificar, no facturado"
+
+        elif vtex.pedido_marketplace():
+            if vtex.estado != "Faturado":
+                return "Avisar a marketplace"
+
+        return ""
