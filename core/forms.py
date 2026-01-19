@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from django import forms
 from django.core.exceptions import ValidationError
 from datetime import date
@@ -14,8 +18,9 @@ class RangoFechasFormMixin:
     Proporciona campos de fecha_inicio y fecha_fin con validación estándar.
     Sigue el principio DRY evitando duplicar código de fechas.
     """
+    fields: dict[str, Any]  # Type hint for form fields
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         # Configurar campo fecha_inicio si existe
@@ -34,9 +39,9 @@ class RangoFechasFormMixin:
                 'placeholder': 'Seleccione fecha de fin'
             })
 
-    def clean(self):
+    def clean(self) -> dict[str, Any]:
         """Validación estándar de rango de fechas."""
-        cleaned_data = super().clean()
+        cleaned_data: dict[str, Any] = super().clean()  # type: ignore[misc]
         fecha_inicio = cleaned_data.get('fecha_inicio')
         fecha_fin = cleaned_data.get('fecha_fin')
 
@@ -101,46 +106,29 @@ class GenerarReportePaywayForm(forms.Form):
 
     )
 
-    def clean(self):
-
+    def clean(self) -> dict[str, Any]:
         """Validación personalizada del formulario."""
-
-        cleaned_data = super().clean()
-
+        cleaned_data: dict[str, Any] = super().clean()
         fecha_inicio = cleaned_data.get('fecha_inicio')
-
         fecha_fin = cleaned_data.get('fecha_fin')
 
         if fecha_inicio and fecha_fin:
-
-        # Validar que fecha_inicio no sea mayor a fecha_fin
-
+            # Validar que fecha_inicio no sea mayor a fecha_fin
             if fecha_inicio > fecha_fin:
-
                 raise ValidationError(
-
                     'La fecha de inicio no puede ser posterior a la fecha de fin.'
-
                 )
 
             # Validar que las fechas no sean futuras
-
             hoy = date.today()
-
             if fecha_inicio > hoy:
-
                 raise ValidationError(
-
                     'La fecha de inicio no puede ser una fecha futura.'
-
                 )
 
             if fecha_fin > hoy:
-
                 raise ValidationError(
-
                     'La fecha de fin no puede ser una fecha futura.'
-
                 )
 
         return cleaned_data
@@ -166,7 +154,7 @@ class CredencialesFormBase(forms.ModelForm):
             })
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         # Personalizar placeholders según el nombre de la plataforma
@@ -178,7 +166,7 @@ class CredencialesFormBase(forms.ModelForm):
         self.fields['usuario'].help_text = f'Usuario para acceder a la plataforma {plataforma}'
         self.fields['clave'].help_text = f'Contraseña asociada a su cuenta de {plataforma}'
 
-    def _get_nombre_plataforma(self):
+    def _get_nombre_plataforma(self) -> str:
         """Obtiene el nombre de la plataforma desde el modelo."""
         # Por defecto, usar el nombre del modelo sin "Usuario"
         model_name = self.Meta.model.__name__

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from asgiref.sync import sync_to_async
 
 from core.models import UsuarioPayway, ReportePayway, TransaccionPayway
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, Page, Browser
 from django.db import transaction
 from django.conf import settings
 from django.utils import timezone
@@ -18,7 +20,7 @@ class ReportePaywayService:
 
     TIEMPO_DE_ESPERA = 900000  # 900 segundos (15 minutos)
 
-    def __init__(self, ruta_carpeta=None):
+    def __init__(self, ruta_carpeta: str | None = None) -> None:
         """
         Inicializa el servicio de reportes Payway.
 
@@ -26,23 +28,23 @@ class ReportePaywayService:
             ruta_carpeta: Ruta donde se guardarán los archivos descargados.
                          Si no se proporciona, usa MEDIA_ROOT de Django.
         """
-        self.lista_archivos_excel = []
-        self.dias_con_error = []
-        self.fecha_formato_mostrar = ""
-        self.fecha_formato_guardado = ""
-        self.usuario = ""
-        self.contrasena = ""
+        self.lista_archivos_excel: list[str] = []
+        self.dias_con_error: list[datetime] = []
+        self.fecha_formato_mostrar: str = ""
+        self.fecha_formato_guardado: str = ""
+        self.usuario: str = ""
+        self.contrasena: str = ""
 
         # Si no se proporciona ruta, usar MEDIA_ROOT
         if ruta_carpeta is None:
-            self.ruta_carpeta = settings.MEDIA_ROOT
+            self.ruta_carpeta: str = settings.MEDIA_ROOT
         else:
             self.ruta_carpeta = ruta_carpeta
 
         # Asegurar que el directorio existe
         os.makedirs(self.ruta_carpeta, exist_ok=True)
 
-    async def entrar_pagina(self, pagina):
+    async def entrar_pagina(self, pagina: Page) -> None:
         """
         Realiza el login en la plataforma Payway.
 
@@ -61,8 +63,16 @@ class ReportePaywayService:
         await pagina.click("input[id='image1']")
         await pagina.wait_for_load_state("networkidle", timeout=self.TIEMPO_DE_ESPERA)
 
-    async def descargar_y_convertir(self, pagina, fecha_formato_guardado, hora_inicio, minuto_inicio,
-                               hora_fin, minuto_fin, etiqueta):
+    async def descargar_y_convertir(
+        self,
+        pagina: Page,
+        fecha_formato_guardado: str,
+        hora_inicio: str,
+        minuto_inicio: str,
+        hora_fin: str,
+        minuto_fin: str,
+        etiqueta: str
+    ) -> str | None:
         """
         Descarga el CSV, lo convierte a Excel y lo almacena en la lista de archivos.
 
@@ -117,7 +127,7 @@ class ReportePaywayService:
             logger.error(f"Error al descargar y convertir archivo: {e}", exc_info=True)
             return None
 
-    async def buscar_dia(self, fecha, pagina):
+    async def buscar_dia(self, fecha: datetime, pagina: Page) -> None:
         """
         Configura la búsqueda para un día completo (00:00 - 23:59).
 
@@ -138,7 +148,7 @@ class ReportePaywayService:
         await pagina.click("input[name='b_consultaform']", timeout=self.TIEMPO_DE_ESPERA)
         await pagina.wait_for_load_state("networkidle", timeout=self.TIEMPO_DE_ESPERA)
 
-    async def error_al_buscar_dia(self, pagina):
+    async def error_al_buscar_dia(self, pagina: Page) -> bool:
         """
         Verifica si ocurrió un error en la búsqueda.
 
@@ -151,7 +161,7 @@ class ReportePaywayService:
         mensaje_error = pagina.locator("p:has-text('Ha ocurrido un error')")
         return await mensaje_error.count() > 0
 
-    async def transacciones_superadas(self, pagina):
+    async def transacciones_superadas(self, pagina: Page) -> bool:
         """
         Verifica si se superó el límite de 5000 transacciones.
 
@@ -165,10 +175,10 @@ class ReportePaywayService:
         count = await mensaje_error.count()
         if count > 0:
             text_content = await mensaje_error.text_content()
-            return "5000 transacciones" in text_content
+            return text_content is not None and "5000 transacciones" in text_content
         return False
 
-    async def procesar_dia(self, pagina, fecha_actual):
+    async def procesar_dia(self, pagina: Page, fecha_actual: datetime) -> datetime:
         """
         Procesa las transacciones de un día, dividiéndolas si es necesario.
 
@@ -236,13 +246,19 @@ class ReportePaywayService:
 
         return fecha_actual
 
-    async def generar_reporte(self, fecha_inicio, fecha_fin,nuevo_reporte):
+    async def generar_reporte(
+        self,
+        fecha_inicio: str,
+        fecha_fin: str,
+        nuevo_reporte: ReportePayway
+    ) -> int | None:
         """
         Genera un reporte completo de transacciones para un rango de fechas.
 
         Args:
             fecha_inicio: Fecha de inicio en formato DD/MM/YYYY.
             fecha_fin: Fecha de fin en formato DD/MM/YYYY.
+            nuevo_reporte: Objeto ReportePayway
 
         Returns:
             int: ID del reporte generado, o None si falla.
@@ -327,8 +343,8 @@ class ReportePaywayService:
             if navegador_web:
                 logger.info("Proceso de navegación finalizado")
 
-    def guardar_transacciones_sincrinico(self,transacciones,reporte):
-        reportes_objeto = []
+    def guardar_transacciones_sincrinico(self, transacciones: pd.DataFrame, reporte: ReportePayway) -> None:
+        reportes_objeto: list[TransaccionPayway] = []
         for indice, transaccion in transacciones.iterrows():
             # Parsear la fecha del formato DD/MM/YYYY HH:MM:SS al formato de Django
             fecha_str = transaccion["Fecha original"]

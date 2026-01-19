@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 import pandas as pd
 from asgiref.sync import sync_to_async
 from playwright.sync_api import sync_playwright
@@ -15,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ReporteCDPService:
     """Servicio para generar reportes de transacciones de CDP."""
 
-    def __init__(self, ruta_carpeta=None):
+    def __init__(self, ruta_carpeta: str | None = None) -> None:
         """
         Inicializa el servicio de reportes CDP.
 
@@ -25,14 +29,14 @@ class ReporteCDPService:
         """
         # Si no se proporciona ruta, usar MEDIA_ROOT
         if ruta_carpeta is None:
-            self.ruta_carpeta = settings.MEDIA_ROOT
+            self.ruta_carpeta: str = settings.MEDIA_ROOT
         else:
             self.ruta_carpeta = ruta_carpeta
 
         # Asegurar que el directorio existe
         os.makedirs(self.ruta_carpeta, exist_ok=True)
 
-    async def _obtener_credenciales(self):
+    async def _obtener_credenciales(self) -> UsuarioCDP:
         """
         Obtiene credenciales de CDP desde la base de datos.
 
@@ -50,7 +54,7 @@ class ReporteCDPService:
             )
         return credenciales
 
-    async def generar_reporte(self, fecha_inicio, fecha_fin, reporte_id):
+    async def generar_reporte(self, fecha_inicio: str, fecha_fin: str, reporte_id: int) -> bool:
         """
         Genera un reporte de CDP para el rango de fechas especificado.
 
@@ -117,7 +121,12 @@ class ReporteCDPService:
                 pass
             return False
 
-    async def descargar_transacciones_cdp(self, fecha_inicio, fecha_fin, credenciales):
+    async def descargar_transacciones_cdp(
+        self,
+        fecha_inicio: str,
+        fecha_fin: str,
+        credenciales: UsuarioCDP
+    ) -> list[dict[str, Any]]:
         """
         Descarga las transacciones de CDP usando Playwright.
 
@@ -134,7 +143,12 @@ class ReporteCDPService:
             fecha_inicio, fecha_fin, credenciales
         )
 
-    def _descargar_transacciones_cdp_sync(self, fecha_inicio, fecha_fin, credenciales):
+    def _descargar_transacciones_cdp_sync(
+        self,
+        fecha_inicio: str,
+        fecha_fin: str,
+        credenciales: UsuarioCDP
+    ) -> list[dict[str, Any]]:
         """
         Método síncrono interno que realiza la descarga con Playwright.
         """
@@ -220,7 +234,11 @@ class ReporteCDPService:
 
             return transacciones
 
-    async def guardar_transacciones(self, transacciones, reporte):
+    async def guardar_transacciones(
+        self,
+        transacciones: list[dict[str, Any]],
+        reporte: ReporteCDP
+    ) -> int:
         """
         Guarda las transacciones en la base de datos.
 

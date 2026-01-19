@@ -1,44 +1,60 @@
+from __future__ import annotations
+
 import os.path
+from datetime import datetime
+from decimal import Decimal
+from typing import Any, ClassVar
 
 from django.conf import settings
 from django.db import models
+from django.db.models import QuerySet
 from django.utils.translation import gettext_lazy as _
 import pandas as pd
 
 
-# Create your models here.
+# =============================================================================
+# MODELOS DE USUARIOS/CREDENCIALES
+# =============================================================================
 
 class UsuarioPayway(models.Model):
+    """Credenciales para acceder a la plataforma Payway."""
+
     usuario = models.CharField(max_length=100)
     clave = models.CharField(max_length=100)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Credenciales Payway - {self.usuario}"
 
 
 class UsuarioCDP(models.Model):
+    """Credenciales para acceder a la plataforma CDP."""
+
     usuario = models.CharField(max_length=100)
     clave = models.CharField(max_length=100)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Credenciales CDP - {self.usuario}"
 
 
 class UsuarioVtex(models.Model):
+    """Credenciales para acceder a la API de VTEX."""
+
     app_key = models.CharField(max_length=200, verbose_name="API App Key")
     app_token = models.CharField(max_length=500, verbose_name="API App Token")
     account_name = models.CharField(max_length=100, default="carrefourar", verbose_name="Account Name")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Credenciales VTEX - {self.account_name}"
 
 
 class UsuarioJanis(models.Model):
+    """Credenciales para acceder a la API de Janis."""
+
     api_key = models.CharField(max_length=200, verbose_name="Janis API Key")
     api_secret = models.CharField(max_length=500, verbose_name="Janis API Secret")
     client_code = models.CharField(max_length=100, verbose_name="Janis Client Code")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Credenciales Janis - {self.client_code}"
 
     class Meta:
@@ -79,7 +95,7 @@ class TipoFiltroVtex(models.Model):
         verbose_name_plural = "Tipos de Filtros VTEX"
         ordering = ['nombre']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.nombre
 
 
@@ -114,7 +130,7 @@ class ValorFiltroVtex(models.Model):
         ordering = ['tipo_filtro', 'nombre']
         unique_together = ['tipo_filtro', 'codigo']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.tipo_filtro.nombre}: {self.nombre}"
 
 
@@ -138,7 +154,7 @@ class ReportePayway(models.Model):
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
 
-    def generar_reporter_excel(self):
+    def generar_reporter_excel(self) -> str:
         """
         Genera el archivo Excel del reporte y retorna la ruta completa del archivo generado.
 
@@ -155,6 +171,7 @@ class ReportePayway(models.Model):
             data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_localize(None)
         data_frame_transacciones.to_excel(ruta_final,index=False)
         return ruta_final
+
 
 class ReporteVtex(models.Model):
     class Estado(models.TextChoices):
@@ -185,10 +202,10 @@ class ReporteVtex(models.Model):
         verbose_name = "Reporte VTEX"
         verbose_name_plural = "Reportes VTEX"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Reporte VTEX #{self.id} ({self.fecha_inicio} - {self.fecha_fin})"
 
-    def obtener_filtros_por_tipo(self, codigo_tipo):
+    def obtener_filtros_por_tipo(self, codigo_tipo: str) -> QuerySet[ValorFiltroVtex]:
         """
         Obtiene los valores de filtro aplicados para un tipo específico.
 
@@ -203,14 +220,14 @@ class ReporteVtex(models.Model):
             tipo_filtro__codigo=codigo_tipo
         )
 
-    def obtener_filtros_para_api(self):
+    def obtener_filtros_para_api(self) -> dict[str, list[str]]:
         """
         Genera el diccionario de filtros para enviar a la API de VTEX.
 
         Returns:
             dict: {parametro_api: [valor1, valor2, ...]}
         """
-        filtros_api = {}
+        filtros_api: dict[str, list[str]] = {}
         for filtro in self.filtros_aplicados.select_related('tipo_filtro', 'valor_filtro').all():
             param = filtro.tipo_filtro.parametro_api
             if param not in filtros_api:
@@ -218,7 +235,7 @@ class ReporteVtex(models.Model):
             filtros_api[param].append(filtro.valor_filtro.codigo)
         return filtros_api
 
-    def generar_reporter_excel(self):
+    def generar_reporter_excel(self) -> str:
         """
         Genera el archivo Excel del reporte y retorna la ruta completa del archivo generado.
 
@@ -267,10 +284,10 @@ class FiltroReporteVtex(models.Model):
         verbose_name_plural = "Filtros de Reportes VTEX"
         unique_together = ['reporte', 'tipo_filtro', 'valor_filtro']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Reporte #{self.reporte.id} - {self.tipo_filtro.nombre}: {self.valor_filtro.nombre}"
 
-    def clean(self):
+    def clean(self) -> None:
         """Valida que el valor pertenezca al tipo de filtro correcto."""
         from django.core.exceptions import ValidationError
         if self.valor_filtro.tipo_filtro != self.tipo_filtro:
@@ -294,7 +311,7 @@ class ReporteCDP(models.Model):
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
 
-    def generar_reporter_excel(self):
+    def generar_reporter_excel(self) -> str:
         """
         Genera el archivo Excel del reporte y retorna la ruta completa del archivo generado.
 
@@ -327,7 +344,7 @@ class ReporteJanis(models.Model):
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
 
-    def generar_reporter_excel(self):
+    def generar_reporter_excel(self) -> str:
         """
         Genera el archivo Excel del reporte y retorna la ruta completa del archivo generado.
 
@@ -352,11 +369,13 @@ class TransaccionJanis(models.Model):
     seller = models.CharField(max_length=100)
     estado = models.CharField(max_length=100)
     reporte = models.ForeignKey(ReporteJanis, on_delete=models.CASCADE, related_name='transacciones')
-    estados_entregado = ["delivered","inDelivery",
-                         "readyForDelivery","readyForInternalDistribution","en auditoria",
-                         "procesandoPromociones"]
+    estados_entregado: ClassVar[list[str]] = [
+        "delivered", "inDelivery",
+        "readyForDelivery", "readyForInternalDistribution", "en auditoria",
+        "procesandoPromociones"
+    ]
 
-    def convertir_en_diccionario(self):
+    def convertir_en_diccionario(self) -> dict[str, Any]:
         return {
             'Pedido': self.numero_pedido,
             'Transaccion': self.numero_transaccion,
@@ -366,8 +385,7 @@ class TransaccionJanis(models.Model):
             'estado': self.estado
         }
 
-    def estado_entregado(self):
-
+    def estado_entregado(self) -> bool:
         return any(estado_entregado in self.estado for estado_entregado in self.estados_entregado)
 
 
@@ -406,7 +424,7 @@ class Cruce(models.Model):
         related_name='cruces', verbose_name='Reporte Janis'
     )
 
-    def generar_reporter_excel(self, solo_observaciones=False):
+    def generar_reporter_excel(self, solo_observaciones: bool = False) -> str:
         """
         Genera el archivo Excel del cruce con múltiples hojas:
         - Cruce: Resultado del cruce de transacciones
@@ -495,7 +513,7 @@ class TransaccionCruce(models.Model):
     resultado_cruce = models.CharField(max_length=255, blank=True, default='')
     cruce = models.ForeignKey(Cruce, on_delete=models.CASCADE, related_name='transacciones')
 
-    def convertir_en_diccionario(self):
+    def convertir_en_diccionario(self) -> dict[str, Any]:
         return {
             'Pedido': self.numero_pedido,
             'fecha': self.fecha_hora,
@@ -516,11 +534,13 @@ class TransaccionCDP(models.Model):
     numero_tienda = models.DecimalField(max_digits=10, decimal_places=2)
     estado = models.CharField(max_length=100)
     reporte = models.ForeignKey(ReporteCDP, on_delete=models.CASCADE, related_name='transacciones')
-    estados_entregados = ["finalizado", "disponible en drive", "disponible en sucursal",
-                          "disponible en sede","pendiente de despacho","pendiente de de envio a pup",
-                          "recepcion pendiente"]
+    estados_entregados: ClassVar[list[str]] = [
+        "finalizado", "disponible en drive", "disponible en sucursal",
+        "disponible en sede", "pendiente de despacho", "pendiente de de envio a pup",
+        "recepcion pendiente"
+    ]
 
-    def convertir_en_diccionario(self):
+    def convertir_en_diccionario(self) -> dict[str, Any]:
         return {
             'Pedido': self.numero_pedido,
             'fecha': self.fecha_hora,
@@ -528,7 +548,7 @@ class TransaccionCDP(models.Model):
             'estado': self.estado
         }
 
-    def estado_entregado(self):
+    def estado_entregado(self) -> bool:
         return any(keyword.lower() in self.estado.lower() for keyword in self.estados_entregados)
 
 
@@ -541,11 +561,18 @@ class TransaccionPayway(models.Model):
     estado = models.CharField(max_length=100)
     tarjeta = models.CharField(max_length=100)
     reporte = models.ForeignKey(ReportePayway, on_delete=models.CASCADE, related_name='transacciones')
-    estados_no_entregados = ["Pre autorizada", "Vencida"]
-    def convertir_en_diccionario(self):
-        return {'Transaccion': self.numero_transaccion, 'fecha': self.fecha_hora,
-                'monto': self.monto, 'estado': self.estado, 'tarjeta': self.tarjeta}
-    def estado_no_cobrado(self):
+    estados_no_entregados: ClassVar[list[str]] = ["Pre autorizada", "Vencida"]
+
+    def convertir_en_diccionario(self) -> dict[str, Any]:
+        return {
+            'Transaccion': self.numero_transaccion,
+            'fecha': self.fecha_hora,
+            'monto': self.monto,
+            'estado': self.estado,
+            'tarjeta': self.tarjeta
+        }
+
+    def estado_no_cobrado(self) -> bool:
         return any(keyword in self.estado for keyword in self.estados_no_entregados)
 
 class TransaccionVtex(models.Model):
@@ -562,10 +589,10 @@ class TransaccionVtex(models.Model):
         blank=True,
         verbose_name='Valor del pedido'
     )
-    KEYWORDS_FOOD = ["carrefour", "hiper", "maxi", "market", "express", "trelew"]
+    KEYWORDS_FOOD: ClassVar[list[str]] = ["carrefour", "hiper", "maxi", "market", "express", "trelew"]
     reporte = models.ForeignKey(ReporteVtex, on_delete=models.CASCADE, related_name='transacciones')
 
-    def convertir_en_diccionario(self):
+    def convertir_en_diccionario(self) -> dict[str, Any]:
         return {
             'Pedido': self.numero_pedido,
             'Transaccion': self.numero_transaccion,
@@ -575,13 +602,12 @@ class TransaccionVtex(models.Model):
             'estado': self.estado,
             'valor': self.valor
         }
+
     def pedido_electro(self) -> bool:
         return self.seller == "Hogar & Electro"
 
-
-
-    def pedido_food(self):
+    def pedido_food(self) -> bool:
         return any(keyword.lower() in self.seller.lower() for keyword in self.KEYWORDS_FOOD)
 
-    def pedido_marketplace(self):
+    def pedido_marketplace(self) -> bool:
         return not self.pedido_electro() and not self.pedido_food()

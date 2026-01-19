@@ -1,6 +1,10 @@
 """
 Servicio para generar reportes de Janis usando la API de OMS.
 """
+from __future__ import annotations
+
+from typing import Any, BinaryIO
+
 from asgiref.sync import sync_to_async
 
 from core.models import ReporteJanis, TransaccionJanis, UsuarioJanis
@@ -24,7 +28,7 @@ class ReporteJanisService:
     # Tamaño de página máximo
     PAGE_SIZE = 100
 
-    def __init__(self, ruta_carpeta=None):
+    def __init__(self, ruta_carpeta: str | None = None) -> None:
         """
         Inicializa el servicio de reportes Janis.
 
@@ -33,13 +37,13 @@ class ReporteJanisService:
                          Si no se proporciona, usa MEDIA_ROOT de Django.
         """
         if ruta_carpeta is None:
-            self.ruta_carpeta = settings.MEDIA_ROOT
+            self.ruta_carpeta: str = settings.MEDIA_ROOT
         else:
             self.ruta_carpeta = ruta_carpeta
 
         os.makedirs(self.ruta_carpeta, exist_ok=True)
 
-    async def _obtener_credenciales(self):
+    async def _obtener_credenciales(self) -> UsuarioJanis:
         """
         Obtiene credenciales de Janis desde la base de datos.
 
@@ -57,7 +61,7 @@ class ReporteJanisService:
             )
         return credenciales
 
-    async def generar_reporte(self, fecha_inicio, fecha_fin, reporte_id):
+    async def generar_reporte(self, fecha_inicio: str, fecha_fin: str, reporte_id: int) -> bool:
         """
         Genera un reporte de Janis para el rango de fechas especificado.
 
@@ -122,7 +126,7 @@ class ReporteJanisService:
                 pass
             return False
 
-    async def guardar_transacciones(self, transacciones_df, reporte):
+    async def guardar_transacciones(self, transacciones_df: pd.DataFrame, reporte: ReporteJanis) -> int:
         """
         Guarda las transacciones en la base de datos.
 
@@ -172,7 +176,7 @@ class ReporteJanisService:
 
         return len(transacciones_objetos)
 
-    def _get_headers(self, credenciales, page=1):
+    def _get_headers(self, credenciales: UsuarioJanis, page: int = 1) -> dict[str, str]:
         """
         Genera los headers para las requests a la API de Janis.
 
@@ -193,7 +197,7 @@ class ReporteJanisService:
             'x-janis-page-size': str(self.PAGE_SIZE)
         }
 
-    def _formatear_fecha_iso(self, fecha):
+    def _formatear_fecha_iso(self, fecha: datetime) -> str:
         """
         Formatea una fecha a formato ISO 8601 para la API de Janis.
 
@@ -205,7 +209,12 @@ class ReporteJanisService:
         """
         return fecha.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
-    def descargar_transacciones(self, fecha_inicio_str, fecha_fin_str, credenciales):
+    def descargar_transacciones(
+        self,
+        fecha_inicio_str: str,
+        fecha_fin_str: str,
+        credenciales: UsuarioJanis
+    ) -> pd.DataFrame:
         """
         Descarga transacciones de Janis para el rango de fechas.
 
@@ -323,7 +332,7 @@ class ReporteJanisService:
 
         return df
 
-    def importar_desde_excel(self, archivo, reporte):
+    def importar_desde_excel(self, archivo: BinaryIO, reporte: ReporteJanis) -> int:
         """
         Importa transacciones desde un archivo Excel.
 

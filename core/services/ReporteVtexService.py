@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from asgiref.sync import sync_to_async
+from typing import Any
 
 from core.models import ReporteVtex, TransaccionVtex, UsuarioVtex
 
@@ -25,7 +28,7 @@ class ReporteVtexService:
     # Máximo de conexiones simultáneas abiertas
     MAX_CONCURRENT_CONNECTIONS = 50
 
-    def __init__(self, ruta_carpeta=None):
+    def __init__(self, ruta_carpeta: str | None = None) -> None:
         """
         Inicializa el servicio de reportes VTEX.
 
@@ -35,7 +38,7 @@ class ReporteVtexService:
         """
         # Si no se proporciona ruta, usar MEDIA_ROOT
         if ruta_carpeta is None:
-            self.ruta_carpeta = settings.MEDIA_ROOT
+            self.ruta_carpeta: str = settings.MEDIA_ROOT
         else:
             self.ruta_carpeta = ruta_carpeta
 
@@ -43,17 +46,17 @@ class ReporteVtexService:
         os.makedirs(self.ruta_carpeta, exist_ok=True)
 
         # Rate limiter y semáforo se inicializan en el contexto async
-        self._rate_limiter = None
-        self._semaphore = None
+        self._rate_limiter: AsyncLimiter | None = None
+        self._semaphore: asyncio.Semaphore | None = None
 
-    def _init_async_controls(self):
+    def _init_async_controls(self) -> None:
         """Inicializa rate limiter y semáforo para contexto async."""
         if self._rate_limiter is None:
             self._rate_limiter = AsyncLimiter(self.RATE_LIMIT_PER_SECOND, 1)
         if self._semaphore is None:
             self._semaphore = asyncio.Semaphore(self.MAX_CONCURRENT_CONNECTIONS)
 
-    async def _obtener_credenciales(self):
+    async def _obtener_credenciales(self) -> UsuarioVtex:
         """
         Obtiene credenciales de VTEX desde la base de datos.
 
@@ -71,7 +74,7 @@ class ReporteVtexService:
             )
         return credenciales
 
-    async def generar_reporte(self, fecha_inicio, fecha_fin, reporte_id):
+    async def generar_reporte(self, fecha_inicio: str, fecha_fin: str, reporte_id: int) -> bool:
         """
         Genera un reporte de VTEX para el rango de fechas especificado.
 
@@ -142,7 +145,7 @@ class ReporteVtexService:
                 pass
             return False
 
-    async def guardar_transacciones(self, transacciones_df, reporte):
+    async def guardar_transacciones(self, transacciones_df: pd.DataFrame, reporte: ReporteVtex) -> int:
         """
         Guarda las transacciones en la base de datos.
 
@@ -202,11 +205,18 @@ class ReporteVtexService:
 
         return len(transacciones_objetos)
 
-    def formatear(self, fecha):
+    def formatear(self, fecha: datetime) -> str:
         """Formatea fecha para la API de VTEX"""
         return fecha.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
-    def get_pedidos(self, ini, fin, url, headers, filtros=None):
+    def get_pedidos(
+        self,
+        ini: datetime,
+        fin: datetime,
+        url: str,
+        headers: dict[str, str],
+        filtros: dict[str, list[str]] | None = None
+    ) -> tuple[list[dict[str, Any]], int]:
         """
         Hace una request y devuelve los pedidos + cantidad de páginas.
 
@@ -239,7 +249,13 @@ class ReporteVtexService:
         data = response.json()
         return data.get("list", []), data.get("paging", {}).get("pages", 0)
 
-    async def buscar_seller_async(self, session, order_id, url_base, headers):
+    async def buscar_seller_async(
+        self,
+        session: aiohttp.ClientSession,
+        order_id: str,
+        url_base: str,
+        headers: dict[str, str]
+    ) -> tuple[str, str]:
         """
         Busca el seller de un pedido específico con rate limiting automático.
 
@@ -296,7 +312,12 @@ class ReporteVtexService:
 
         return order_id, "Error al obtener seller"
 
-    async def obtener_todos_sellers(self, pedidos_unicos: dict, url_base, headers):
+    async def obtener_todos_sellers(
+        self,
+        pedidos_unicos: dict[str, dict[str, Any]],
+        url_base: str,
+        headers: dict[str, str]
+    ) -> dict[str, dict[str, Any]]:
         """
         Obtiene sellers para todos los pedidos en paralelo con rate limiting.
 
@@ -349,7 +370,13 @@ class ReporteVtexService:
 
         return pedidos_unicos
 
-    def descargarVtex(self, fecha_inicio_usuario, fecha_fin_usuario, credenciales, filtros=None):
+    def descargarVtex(
+        self,
+        fecha_inicio_usuario: str,
+        fecha_fin_usuario: str,
+        credenciales: UsuarioVtex,
+        filtros: dict[str, list[str]] | None = None
+    ) -> pd.DataFrame:
         """
         Descarga pedidos de VTEX usando la API.
 
