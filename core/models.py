@@ -357,6 +357,8 @@ class ReporteJanis(models.Model):
         data_frame_transacciones = pd.DataFrame(transacciones_convertidas)
         if not data_frame_transacciones.empty and 'fecha' in data_frame_transacciones.columns:
             data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_localize(None)
+        if not data_frame_transacciones.empty and 'fecha_entrega' in data_frame_transacciones.columns:
+            data_frame_transacciones['fecha_entrega'] = data_frame_transacciones['fecha_entrega'].dt.tz_localize(None)
         data_frame_transacciones.to_excel(ruta_final, index=False)
         return ruta_final
 
@@ -365,6 +367,7 @@ class TransaccionJanis(models.Model):
     numero_pedido = models.CharField(max_length=100)
     numero_transaccion = models.CharField(max_length=100)
     fecha_hora = models.DateTimeField()
+    fecha_entrega = models.DateTimeField(null=True, blank=True)
     medio_pago = models.CharField(max_length=100)
     seller = models.CharField(max_length=100)
     estado = models.CharField(max_length=100)
@@ -382,7 +385,8 @@ class TransaccionJanis(models.Model):
             'fecha': self.fecha_hora,
             'medio_pago': self.medio_pago,
             'seller': self.seller,
-            'estado': self.estado
+            'estado': self.estado,
+            'fecha_entrega': self.fecha_entrega
         }
 
     def estado_entregado(self) -> bool:
@@ -451,6 +455,8 @@ class Cruce(models.Model):
             df_cruce = pd.DataFrame(transacciones_convertidas)
             if not df_cruce.empty and 'fecha' in df_cruce.columns:
                 df_cruce['fecha'] = df_cruce['fecha'].dt.tz_localize(None)
+            if not df_cruce.empty and 'fecha_entrega' in df_cruce.columns:
+                df_cruce['fecha_entrega'] = df_cruce['fecha_entrega'].dt.tz_localize(None)
             df_cruce.to_excel(writer, sheet_name='Cruce', index=False)
             """
             # Hoja VTEX (si existe)
@@ -503,6 +509,7 @@ class Cruce(models.Model):
 class TransaccionCruce(models.Model):
     numero_pedido = models.CharField(max_length=100)
     fecha_hora = models.DateTimeField(null=True, blank=True)
+    fecha_entrega = models.DateTimeField(null=True, blank=True)
     medio_pago = models.CharField(max_length=100, blank=True, default='')
     seller = models.CharField(max_length=100, blank=True, default='')
     estado_vtex = models.CharField(max_length=100, blank=True, default='')
@@ -517,6 +524,7 @@ class TransaccionCruce(models.Model):
         return {
             'Pedido': self.numero_pedido,
             'fecha': self.fecha_hora,
+            'fecha_entrega': self.fecha_entrega,
             'medio_pago': self.medio_pago,
             'seller': self.seller,
             'estado_vtex': self.estado_vtex,

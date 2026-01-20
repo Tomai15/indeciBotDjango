@@ -92,6 +92,11 @@
                                 Fecha y Hora
                             </th>
                             <th scope="col">
+                                <i class="bi bi-calendar-event me-1">
+                                    Fecha entrega
+                                </i>
+                            </th>
+                            <th scope="col">
                                 <i class="bi bi-credit-card me-1"></i>
                                 Medio Pago
                             </th>
@@ -113,6 +118,11 @@
                             <td>
                                 <time datetime="{{ transaccion.fecha_hora|date:'Y-m-d\TH:i:s' }}">
                                     <small>{{ transaccion.fecha_hora|date:"d/m/Y H:i:s" }}</small>
+                                </time>
+                            </td>
+                            <td>
+                                <time datetime="{{ transaccion.fecha_entrega|date:'Y-m-d\TH:i:s' }}">
+                                    <small>{{ transaccion.fecha_entrega|date:"d/m/Y H:i:s" }}</small>
                                 </time>
                             </td>
                             <td>

@@ -151,6 +151,10 @@ class ReporteJanisService:
                 fecha_hora_utc = pd.to_datetime(row['fecha_hora'], utc=True)
                 fecha_hora = (fecha_hora_utc - timedelta(hours=3)).replace(tzinfo=None)
 
+                #Parsear fecha de entrega
+                fecha_entrega_utc = pd.to_datetime(row['fecha_entrega'], utc=True)
+                fecha_entrega = (fecha_entrega_utc - timedelta(hours=3)).replace(tzinfo=None)
+
                 transaccion = TransaccionJanis(
                     numero_pedido=str(row.get('numero_pedido', '')),
                     numero_transaccion=str(row.get('numero_transaccion', '')),
@@ -158,6 +162,7 @@ class ReporteJanisService:
                     medio_pago=str(row.get('medio_pago', 'N/A')),
                     seller=str(row.get('seller', 'No encontrado')),
                     estado=str(row.get('estado', 'Desconocido')),
+                    fecha_entrega= fecha_entrega,
                     reporte=reporte
                 )
                 transacciones_objetos.append(transaccion)
@@ -295,6 +300,12 @@ class ReporteJanisService:
                 seller_name = 'No encontrado'
                 if seller_data:
                     seller_name = seller_data.get('name', 'No encontrado')
+                # Extraer fecha de entrega
+
+                shipping_data = pedido.get('shippings',[])
+                fecha_entrega = 'N/A'
+                if shipping_data and len(shipping_data) > 0:
+                    fecha_entrega = shipping_data[0].get('deliveryEstimateDate', 'N/A')
 
                 transaccion = {
                     'numero_pedido': pedido.get('commerceId', ''),
@@ -302,7 +313,8 @@ class ReporteJanisService:
                     'fecha_hora': pedido.get('commerceDateCreated', ''),
                     'medio_pago': medio_pago,
                     'seller': seller_name,
-                    'estado': pedido.get('status', 'Desconocido')
+                    'estado': pedido.get('status', 'Desconocido'),
+                    'fecha_entrega': fecha_entrega
                 }
                 transacciones.append(transaccion)
             except Exception as e:

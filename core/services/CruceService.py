@@ -243,6 +243,7 @@ class CruceService:
             transacciones_cruzadas.append({
                 'numero_pedido': pedido,
                 'fecha_hora': vtex.fecha_hora if vtex else None,
+                'fecha_entrega_janis': janis.fecha_entrega if janis else None,
                 'medio_pago': vtex.medio_pago if vtex else 'N/A',
                 'seller': vtex.seller if vtex else 'N/A',
                 'estado_vtex': vtex.estado if vtex else 'N/A',
@@ -303,6 +304,7 @@ class CruceService:
                 transaccion = TransaccionCruce(
                     numero_pedido=str(row['numero_pedido']),
                     fecha_hora=row.get('fecha_hora'),
+                    fecha_entrega= row.get('fecha_entrega_janis'),
                     medio_pago=str(row.get('medio_pago', '')),
                     seller=str(row.get('seller', '')),
                     estado_vtex=str(row.get('estado_vtex', '')),
