@@ -71,7 +71,8 @@ class ReportePaywayService:
         minuto_inicio: str,
         hora_fin: str,
         minuto_fin: str,
-        etiqueta: str
+        etiqueta: str,
+        fecha_fin_mostrar: str | None = None
     ) -> str | None:
         """
         Descarga el CSV, lo convierte a Excel y lo almacena en la lista de archivos.
@@ -84,6 +85,7 @@ class ReportePaywayService:
             hora_fin: Hora de fin (00-23).
             minuto_fin: Minuto de fin (00-59).
             etiqueta: Etiqueta descriptiva del archivo (mañana, tarde, etc.).
+            fecha_fin_mostrar: Fecha fin en formato DD/MM/YYYY (opcional, para intervalos que cruzan medianoche).
 
         Returns:
             str: Ruta del archivo Excel generado, o None si falla.
@@ -94,6 +96,8 @@ class ReportePaywayService:
 
             # Verificar si existen antes de llenarlos
             if await pagina.locator("input[name='sacparam_horaini']").count() > 0:
+                if fecha_fin_mostrar:
+                    await pagina.fill("input[name='sacparam_fechafin']", fecha_fin_mostrar)
                 await pagina.fill("input[name='sacparam_horaini']", hora_inicio)
                 await pagina.fill("input[name='sacparam_minutoini']", minuto_inicio)
                 await pagina.fill("input[name='sacparam_horafin']", hora_fin)
@@ -137,14 +141,15 @@ class ReportePaywayService:
         """
         self.fecha_formato_mostrar = fecha.strftime("%d/%m/%Y")
         self.fecha_formato_guardado = fecha.strftime("%Y-%m-%d")
+        self.fecha_siguiente_formato_mostrar = (fecha + timedelta(days=1)).strftime("%d/%m/%Y")
 
-        # Establecer la búsqueda para todo el día (00:00 - 23:59)
+        # Buscar desde 00:00 del día hasta 00:00 del día siguiente (cubre el día completo)
         await pagina.fill("input[name='sacparam_fechaini']", self.fecha_formato_mostrar)
-        await pagina.fill("input[name='sacparam_fechafin']", self.fecha_formato_mostrar)
+        await pagina.fill("input[name='sacparam_fechafin']", self.fecha_siguiente_formato_mostrar)
         await pagina.fill("input[name='sacparam_horaini']", "00")
         await pagina.fill("input[name='sacparam_minutoini']", "00")
-        await pagina.fill("input[name='sacparam_horafin']", "23")
-        await pagina.fill("input[name='sacparam_minutofin']", "59")
+        await pagina.fill("input[name='sacparam_horafin']", "00")
+        await pagina.fill("input[name='sacparam_minutofin']", "00")
         await pagina.click("input[name='b_consultaform']", timeout=self.TIEMPO_DE_ESPERA)
         await pagina.wait_for_load_state("networkidle", timeout=self.TIEMPO_DE_ESPERA)
 
@@ -197,18 +202,21 @@ class ReportePaywayService:
             if await self.transacciones_superadas(pagina):
                 logger.info(f"Más de 5000 transacciones el {fecha_actual}, dividiendo en mañana y tarde")
 
-                for parte_del_dia, hora_inicio, minuto_inicio, hora_fin, minuto_fin in [
-                    ("mañana", "00", "00", "11", "59"),
-                    ("tarde", "12", "00", "23", "59")
+                # Intervalos solapados: mañana llega hasta 12:00, tarde hasta 00:00 del día siguiente
+                # Los duplicados en la frontera se eliminan después con drop_duplicates
+                for parte_del_dia, hora_inicio, minuto_inicio, hora_fin, minuto_fin, fecha_fin in [
+                    ("mañana", "00", "00", "12", "00", self.fecha_formato_mostrar),
+                    ("tarde", "12", "00", "00", "00", self.fecha_siguiente_formato_mostrar)
                 ]:
                     archivo = await self.descargar_y_convertir(
                         pagina, self.fecha_formato_guardado, hora_inicio, minuto_inicio,
-                        hora_fin, minuto_fin, parte_del_dia
+                        hora_fin, minuto_fin, parte_del_dia, fecha_fin
                     )
                     if archivo:
                         self.lista_archivos_excel.append(archivo)
 
                     # Rehacer la consulta para ver si hay más de 5000 registros en la mañana o tarde
+                    await pagina.fill("input[name='sacparam_fechafin']", fecha_fin)
                     await pagina.fill("input[name='sacparam_horaini']", hora_inicio)
                     await pagina.fill("input[name='sacparam_minutoini']", minuto_inicio)
                     await pagina.fill("input[name='sacparam_horafin']", hora_fin)
@@ -222,22 +230,23 @@ class ReportePaywayService:
                             f"dividiendo en 4 intervalos"
                         )
 
-                        for sub_parte, h_inicio, m_inicio, h_fin, m_fin in [
-                            ("madrugada", "00", "00", "05", "59"),
-                            ("mañana", "06", "00", "11", "59"),
-                            ("tarde", "12", "00", "17", "59"),
-                            ("noche", "18", "00", "23", "59")
+                        for sub_parte, h_inicio, m_inicio, h_fin, m_fin, fecha_fin_sub in [
+                            ("madrugada", "00", "00", "06", "00", self.fecha_formato_mostrar),
+                            ("mañana", "06", "00", "12", "00", self.fecha_formato_mostrar),
+                            ("tarde", "12", "00", "18", "00", self.fecha_formato_mostrar),
+                            ("noche", "18", "00", "00", "00", self.fecha_siguiente_formato_mostrar)
                         ]:
                             archivo = await self.descargar_y_convertir(
                                 pagina, self.fecha_formato_guardado, h_inicio, m_inicio,
-                                h_fin, m_fin, sub_parte
+                                h_fin, m_fin, sub_parte, fecha_fin_sub
                             )
                             if archivo:
                                 self.lista_archivos_excel.append(archivo)
 
             else:
                 archivo = await self.descargar_y_convertir(
-                    pagina, self.fecha_formato_guardado, "00", "00", "23", "59", "completo"
+                    pagina, self.fecha_formato_guardado, "00", "00", "00", "00", "completo",
+                    self.fecha_siguiente_formato_mostrar
                 )
                 if archivo:
                     self.lista_archivos_excel.append(archivo)
@@ -314,6 +323,9 @@ class ReportePaywayService:
                 # Unir todos los archivos Excel en uno solo
                 lista_datos = [pd.read_excel(archivo) for archivo in self.lista_archivos_excel]
                 datos_finales = pd.concat(lista_datos, ignore_index=True)
+
+                # Eliminar duplicados por id de operación (los intervalos solapados pueden generar repetidos)
+                datos_finales = datos_finales.drop_duplicates(subset=['id oper.'], keep='first')
 
                 # Eliminar todas las columnas sobrantes
                 datos_finales = datos_finales[["id oper.", "Fecha original", "Monto", "Estado", "Tarjeta"]]
