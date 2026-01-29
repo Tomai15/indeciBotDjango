@@ -147,13 +147,11 @@ class ReporteJanisService:
 
         for _, row in transacciones_df.iterrows():
             try:
-                # Parsear fecha UTC y convertir a hora Argentina (UTC-3)
-                fecha_hora_utc = pd.to_datetime(row['fecha_hora'], utc=True)
-                fecha_hora = (fecha_hora_utc - timedelta(hours=3)).replace(tzinfo=None)
+                # Parsear fecha UTC — Django maneja la conversión a hora Argentina automáticamente
+                fecha_hora = pd.to_datetime(row['fecha_hora'], utc=True).to_pydatetime()
 
-                #Parsear fecha de entrega
-                fecha_entrega_utc = pd.to_datetime(row['fecha_entrega'], utc=True)
-                fecha_entrega = (fecha_entrega_utc - timedelta(hours=3)).replace(tzinfo=None)
+                # Parsear fecha de entrega
+                fecha_entrega = pd.to_datetime(row['fecha_entrega'], utc=True).to_pydatetime()
 
                 transaccion = TransaccionJanis(
                     numero_pedido=str(row.get('numero_pedido', '')),

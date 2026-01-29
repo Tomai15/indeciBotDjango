@@ -171,6 +171,32 @@
 
                         <hr class="my-4">
 
+                        <!-- Opción de incluir sellers -->
+                        <div class="mb-4">
+                            <label class="form-label fs-5 fw-bold">
+                                <i class="bi bi-speedometer2 text-warning me-2"></i>
+                                Opciones de rendimiento
+                            </label>
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        {{ form.incluir_sellers }}
+                                        <label class="form-check-label" for="{{ form.incluir_sellers.id_for_label }}">
+                                            {{ form.incluir_sellers.label }}
+                                        </label>
+                                    </div>
+                                    {% if form.incluir_sellers.help_text %}
+                                        <div class="form-text">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            {{ form.incluir_sellers.help_text }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
                         <!-- Botones de acción -->
                         <div class="d-flex gap-3">
                             <button type="submit" class="btn btn-primary btn-lg px-5 shadow">

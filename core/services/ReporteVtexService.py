@@ -101,6 +101,10 @@ class ReporteVtexService:
             if filtros:
                 logger.info(f"Filtros aplicados: {filtros}")
 
+            # Obtener configuración de incluir_sellers
+            incluir_sellers = reporte.incluir_sellers
+            logger.info(f"Incluir sellers: {incluir_sellers}")
+
             # Obtener credenciales desde la base de datos
             credenciales = await self._obtener_credenciales()
 
@@ -109,7 +113,8 @@ class ReporteVtexService:
                 fecha_inicio,
                 fecha_fin,
                 credenciales,
-                filtros
+                filtros,
+                incluir_sellers
             )
 
             # Guardar transacciones en la base de datos
@@ -166,9 +171,8 @@ class ReporteVtexService:
 
         for _, row in transacciones_df.iterrows():
             try:
-                # Parsear fecha UTC y convertir a hora Argentina (UTC-3)
-                fecha_hora_utc = pd.to_datetime(row['creationDate'], utc=True)
-                fecha_hora = (fecha_hora_utc - timedelta(hours=3)).replace(tzinfo=None)
+                # Parsear fecha UTC — Django maneja la conversión a hora Argentina automáticamente
+                fecha_hora = pd.to_datetime(row['creationDate'], utc=True).to_pydatetime()
 
                 # Obtener el valor del pedido (viene en centavos, dividir por 100)
                 valor_raw = row.get('totalValue', None)
@@ -375,7 +379,8 @@ class ReporteVtexService:
         fecha_inicio_usuario: str,
         fecha_fin_usuario: str,
         credenciales: UsuarioVtex,
-        filtros: dict[str, list[str]] | None = None
+        filtros: dict[str, list[str]] | None = None,
+        incluir_sellers: bool = True
     ) -> pd.DataFrame:
         """
         Descarga pedidos de VTEX usando la API.
@@ -385,6 +390,7 @@ class ReporteVtexService:
             fecha_fin_usuario: Fecha fin DD/MM/YYYY
             credenciales: Objeto UsuarioVtex con app_key, app_token, account_name
             filtros: Diccionario con filtros a aplicar (ej: {'estados': ['invoiced']})
+            incluir_sellers: Si True, busca el seller de cada pedido (lento). Si False, omite esta búsqueda.
 
         Returns:
             DataFrame: Pedidos de VTEX procesados
@@ -457,10 +463,15 @@ class ReporteVtexService:
         pedidos_duplicados = len(todos_los_pedidos) - len(pedidos_unicos)
         logger.info(f"Pedidos únicos: {len(pedidos_unicos)} (eliminados {pedidos_duplicados} duplicados)")
 
-        logger.info("Buscando seller de cada pedido (con rate limiting)...")
-        pedidos_unicos = asyncio.run(
-            self.obtener_todos_sellers(pedidos_unicos, url, headers)
-        )
+        if incluir_sellers:
+            logger.info("Buscando seller de cada pedido (con rate limiting)...")
+            pedidos_unicos = asyncio.run(
+                self.obtener_todos_sellers(pedidos_unicos, url, headers)
+            )
+        else:
+            logger.info("Omitiendo búsqueda de sellers (opción desactivada)")
+            for pedido in pedidos_unicos.values():
+                pedido["seller"] = "No consultado"
 
         # Convertir a DataFrame
         pedidos_vtex = pd.DataFrame(list(pedidos_unicos.values()))

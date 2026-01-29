@@ -225,6 +225,7 @@ def generar_reporte_vtex_view(request: HttpRequest) -> HttpResponse:
             fecha_inicio = form.cleaned_data['fecha_inicio']
             fecha_fin = form.cleaned_data['fecha_fin']
             filtros_estado = form.cleaned_data.get('filtros_estado', [])
+            incluir_sellers = form.cleaned_data.get('incluir_sellers', True)
 
             # Formatear fechas para el servicio (DD/MM/YYYY)
             fecha_inicio_str = fecha_inicio.strftime("%d/%m/%Y")
@@ -234,7 +235,8 @@ def generar_reporte_vtex_view(request: HttpRequest) -> HttpResponse:
             nuevo_reporte = ReporteVtex.objects.create(
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin,
-                estado=ReporteVtex.Estado.PENDIENTE
+                estado=ReporteVtex.Estado.PENDIENTE,
+                incluir_sellers=incluir_sellers
             )
 
             # Crear los registros de filtros aplicados

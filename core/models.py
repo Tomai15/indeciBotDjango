@@ -166,9 +166,8 @@ class ReportePayway(models.Model):
         transacciones_convertidas = list(map(lambda transaccion: transaccion.convertir_en_diccionario(), transacciones))
         data_frame_transacciones = pd.DataFrame(transacciones_convertidas)
         if not data_frame_transacciones.empty and 'fecha' in data_frame_transacciones.columns:
-            # .dt accedde a las propiedades de fecha de la serie
-            # .tz_localize(None) elimina la información de zona horaria (lo hace "naive")
-            data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_localize(None)
+            # Convertir UTC → hora Argentina, luego sacar timezone para que Excel lo muestre bien
+            data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_convert('America/Argentina/Buenos_Aires').dt.tz_localize(None)
         data_frame_transacciones.to_excel(ruta_final,index=False)
         return ruta_final
 
@@ -196,6 +195,12 @@ class ReporteVtex(models.Model):
         blank=True,
         verbose_name='Filtros aplicados (LEGACY)',
         help_text='DEPRECATED: Usar filtros_aplicados'
+    )
+
+    incluir_sellers = models.BooleanField(
+        default=True,
+        verbose_name='Incluir sellers',
+        help_text='Si está activo, busca el seller de cada pedido (proceso lento). Si está desactivado, el reporte se genera más rápido.'
     )
 
     class Meta:
@@ -247,9 +252,8 @@ class ReporteVtex(models.Model):
         transacciones_convertidas = list(map(lambda transaccion: transaccion.convertir_en_diccionario(), transacciones))
         data_frame_transacciones = pd.DataFrame(transacciones_convertidas)
         if not data_frame_transacciones.empty and 'fecha' in data_frame_transacciones.columns:
-            # .dt accedde a las propiedades de fecha de la serie
-            # .tz_localize(None) elimina la información de zona horaria (lo hace "naive")
-            data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_localize(None)
+            # Convertir UTC → hora Argentina, luego sacar timezone para que Excel lo muestre bien
+            data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_convert('America/Argentina/Buenos_Aires').dt.tz_localize(None)
         data_frame_transacciones.to_excel(ruta_final,index=False)
         return ruta_final
 
@@ -323,9 +327,8 @@ class ReporteCDP(models.Model):
         transacciones_convertidas = list(map(lambda transaccion: transaccion.convertir_en_diccionario(), transacciones))
         data_frame_transacciones = pd.DataFrame(transacciones_convertidas)
         if not data_frame_transacciones.empty and 'fecha' in data_frame_transacciones.columns:
-            # .dt accedde a las propiedades de fecha de la serie
-            # .tz_localize(None) elimina la información de zona horaria (lo hace "naive")
-            data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_localize(None)
+            # Convertir UTC → hora Argentina, luego sacar timezone para que Excel lo muestre bien
+            data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_convert('America/Argentina/Buenos_Aires').dt.tz_localize(None)
         data_frame_transacciones.to_excel(ruta_final, index=False)
         return ruta_final
 
@@ -356,9 +359,9 @@ class ReporteJanis(models.Model):
         transacciones_convertidas = list(map(lambda transaccion: transaccion.convertir_en_diccionario(), transacciones))
         data_frame_transacciones = pd.DataFrame(transacciones_convertidas)
         if not data_frame_transacciones.empty and 'fecha' in data_frame_transacciones.columns:
-            data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_localize(None)
+            data_frame_transacciones['fecha'] = data_frame_transacciones['fecha'].dt.tz_convert('America/Argentina/Buenos_Aires').dt.tz_localize(None)
         if not data_frame_transacciones.empty and 'fecha_entrega' in data_frame_transacciones.columns:
-            data_frame_transacciones['fecha_entrega'] = data_frame_transacciones['fecha_entrega'].dt.tz_localize(None)
+            data_frame_transacciones['fecha_entrega'] = data_frame_transacciones['fecha_entrega'].dt.tz_convert('America/Argentina/Buenos_Aires').dt.tz_localize(None)
         data_frame_transacciones.to_excel(ruta_final, index=False)
         return ruta_final
 
@@ -453,10 +456,10 @@ class Cruce(models.Model):
                 transacciones = transacciones.exclude(resultado_cruce='').exclude(resultado_cruce__isnull=True)
             transacciones_convertidas = list(map(lambda t: t.convertir_en_diccionario(), transacciones))
             df_cruce = pd.DataFrame(transacciones_convertidas)
-            if not df_cruce.empty and 'fecha' in df_cruce.columns:
-                df_cruce['fecha'] = df_cruce['fecha'].dt.tz_localize(None)
-            if not df_cruce.empty and 'fecha_entrega' in df_cruce.columns:
-                df_cruce['fecha_entrega'] = df_cruce['fecha_entrega'].dt.tz_localize(None)
+            if not df_cruce.empty and 'fecha' in df_cruce.columns and pd.api.types.is_datetime64_any_dtype(df_cruce['fecha']):
+                df_cruce['fecha'] = df_cruce['fecha'].dt.tz_convert('America/Argentina/Buenos_Aires').dt.tz_localize(None)
+            if not df_cruce.empty and 'fecha_entrega' in df_cruce.columns and pd.api.types.is_datetime64_any_dtype(df_cruce['fecha_entrega']):
+                df_cruce['fecha_entrega'] = df_cruce['fecha_entrega'].dt.tz_convert('America/Argentina/Buenos_Aires').dt.tz_localize(None)
             df_cruce.to_excel(writer, sheet_name='Cruce', index=False)
             """
             # Hoja VTEX (si existe)

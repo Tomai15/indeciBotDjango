@@ -342,7 +342,7 @@ class CruceService:
             return ""
 
         if vtex.estado == "Verificando Fatura":
-            if payway.estado == "Pre autorizada":
+            if payway and payway.estado == "Pre autorizada":
                 return ("Cobrar manualmente desde Payway, estado veri"
                         "ficando factura en vtex")
             else:
@@ -353,12 +353,19 @@ class CruceService:
         cdp_entregado = cdp.estado_entregado() if cdp else False
         janis_entregado = janis.estado_entregado() if janis else False
         payway_no_cobrado = payway.estado_no_cobrado() if payway else False
+        cdp_anulado = cdp and cdp.estado == "Anulado sin factura"
+        janis_cancelado = janis and janis.estado == "canceled"
 
         if vtex.medio_pago and "MercadoPagoPro" in vtex.medio_pago and not (vtex.pedido_electro() or vtex.pedido_marketplace()):
             # Logica de cruce MercadoPago
             if cdp_entregado or janis_entregado:
                 if vtex.estado != "Faturado":
                     return "Verificar, entregado pero no facturado"
+
+            elif cdp_anulado or janis_cancelado:
+                if vtex.estado == "Pagamento Aprovado":
+                    return "Verificar, anulado pero no cancelado en vtex"
+
             return ""
 
         elif vtex.pedido_food():
@@ -368,6 +375,12 @@ class CruceService:
                     return "Verificar, entregado pero no facturado"
                 elif payway_no_cobrado:
                     return "Verificar, no cobrado en Payway"
+            elif cdp_anulado or janis_cancelado:
+                if vtex.estado == "Pagamento Aprovado":
+                    return "Verificar, anulado pero no cancelado en vtex"
+                elif payway and payway.estado == "Pre autorizada":
+                    return "Verificar, anulado pero preautorizado en payway"
+
             return ""
 
         elif vtex.pedido_electro():

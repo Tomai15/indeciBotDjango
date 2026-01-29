@@ -229,6 +229,16 @@ class GenerarReporteVtexForm(RangoFechasFormMixin, forms.Form):
         help_text='Seleccione los estados de pedidos a incluir. Si no selecciona ninguno, se incluirán todos.'
     )
 
+    incluir_sellers = forms.BooleanField(
+        label='Incluir información de sellers',
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        help_text='Busca el seller de cada pedido. Desactivar esta opción acelera significativamente el proceso.'
+    )
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # Cargar los valores de filtro de todos los tipos activos relacionados a estados

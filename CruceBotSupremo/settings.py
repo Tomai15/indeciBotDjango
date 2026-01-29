@@ -48,7 +48,7 @@ Q_CLUSTER = {
     'name': 'sistema_reportes',
     'workers': 4,        # Cuántas tareas simultáneas puede procesar
     'recycle': 500,      # Reinicia workers cada 500 tareas (libera memoria)
-    'timeout': 7200,     # Si una tarea tarda > 2h, se marca como fallida
+    'timeout': 28800,    # Aumentado a 8h por volumen de datos y rate limits
     'retry': 86400,      # 24h - en la práctica nunca reintenta (debe ser > timeout)
     'orm': 'default',    # Usa tu DB, no Redis
     'save_limit': 250,   # Cuántas tareas exitosas guarda en el historial
@@ -96,6 +96,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 30,
+        },
     }
 }
 
