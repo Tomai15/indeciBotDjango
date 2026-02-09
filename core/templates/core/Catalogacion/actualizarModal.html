@@ -1,0 +1,125 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Actualizar Modal Logistica{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header con boton volver -->
+    <header class="row mb-4">
+        <div class="col-12 mb-3">
+            <a href="{% url 'home_catalogacion' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver al inicio
+            </a>
+        </div>
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-primary">
+                <i class="bi bi-truck me-2"></i>
+                Actualizar Modal Logistica
+            </h1>
+            <p class="text-muted">Subi tu archivo Excel con las columnas skuid y modal logistica</p>
+        </div>
+    </header>
+
+    <!-- Mensajes de Django -->
+    {% if messages %}
+        <div class="row mb-4">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {% if message.tags == 'error' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-2">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-upload me-2"></i>
+                        Subir archivo Excel
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        {{ form.as_div }}
+
+                        <div class="form-text mt-2 mb-4">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Valores validos para modal logistica: <strong>FIREARMS</strong>, <strong>GLASS</strong>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Botones de accion -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                                <i class="bi bi-play-circle me-2"></i>
+                                Procesar
+                            </button>
+                            <a href="{% url 'home_catalogacion' %}" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna lateral con informacion -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Informacion importante
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>El archivo debe ser formato <strong>.xlsx</strong></small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Debe contener las columnas <strong>skuid</strong> y <strong>modal logistica</strong></small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>La tarea se procesara de forma asincrona</small>
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Podras ver el progreso en el <a href="{% url 'lista_tareas_catalogacion' %}">historial de tareas</a></small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

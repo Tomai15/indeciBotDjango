@@ -67,6 +67,69 @@
 
     <!-- Formularios de Credenciales -->
     <div class="row g-4">
+        <!-- Credenciales Carrefour Web -->
+        <div class="col-lg-12">
+            <div class="card shadow-sm border-2 h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shop me-2"></i>
+                        Credenciales Carrefour Web
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if tiene_carrefour %}
+                        <div class="alert alert-success mb-3" role="alert">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <small>Credenciales configuradas</small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <small>No hay credenciales configuradas. Se necesitan para Busqueda de EANs y Categorias.</small>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-5 mb-3">
+                                <label for="{{ form_carrefour.email.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-envelope-fill text-warning me-2"></i>
+                                    {{ form_carrefour.email.label }}
+                                </label>
+                                {{ form_carrefour.email }}
+                                {% if form_carrefour.email.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                        {{ form_carrefour.email.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-5 mb-3">
+                                <label for="{{ form_carrefour.clave.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-lock-fill text-warning me-2"></i>
+                                    {{ form_carrefour.clave.label }}
+                                </label>
+                                {{ form_carrefour.clave }}
+                                {% if form_carrefour.clave.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                        {{ form_carrefour.clave.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 mb-3 d-flex align-items-end">
+                                <button type="submit" name="carrefour_submit" class="btn btn-warning btn-lg w-100 shadow">
+                                    <i class="bi bi-save me-2"></i>
+                                    Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Credenciales Payway -->
         <div class="col-lg-6">
             <div class="card shadow-sm border-2 h-100">

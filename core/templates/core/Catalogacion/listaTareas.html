@@ -1,66 +1,62 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Reportes VTEX{% endblock %}
+{% block title %}Historial de Tareas de Catalogacion{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <!-- Header con botón volver -->
+    <!-- Header con boton volver -->
     <header class="row mb-4">
         <div class="col-12 mb-3">
-            <a href="{% url 'home_ecommerce' %}" class="btn btn-outline-primary">
+            <a href="{% url 'home_catalogacion' %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left me-2"></i>
                 Volver al inicio
             </a>
         </div>
         <div class="col-md-8">
             <h1 class="display-5 fw-bold text-primary">
-                <i class="bi bi-file-earmark-text me-2"></i>
-                Reportes Generados VTEX
+                <i class="bi bi-list-task me-2"></i>
+                Historial de Tareas de Catalogacion
             </h1>
-            <p class="text-muted">Visualiza y gestiona todos tus reportes de VTEX</p>
+            <p class="text-muted">Visualiza y gestiona todas las tareas de catalogacion</p>
         </div>
-        <div class="col-md-4 text-end d-flex align-items-center justify-content-end gap-2">
-            <button onclick="location.reload()" class="btn btn-outline-secondary btn-lg shadow-sm" title="Recargar página">
+        <div class="col-md-4 text-end d-flex align-items-center justify-content-end">
+            <button onclick="location.reload()" class="btn btn-outline-secondary btn-lg shadow-sm" title="Recargar pagina">
                 <i class="bi bi-arrow-clockwise me-2"></i>
                 Recargar
             </button>
-            <a href="{% url 'generar_reporte_vtex' %}" class="btn btn-primary btn-lg shadow">
-                <i class="bi bi-plus-circle me-2"></i>
-                Nuevo Reporte
-            </a>
         </div>
     </header>
 
     {% if object_list %}
-        <!-- Grid de reportes -->
+        <!-- Grid de tareas -->
         <section class="row g-4">
-            {% for reporte in object_list %}
+            {% for tarea in object_list %}
             <div class="col-md-6 col-lg-4">
                 <article class="card h-100 shadow-sm border-2">
                     <div class="card-body">
-                        <!-- ID del Reporte -->
+                        <!-- ID de la Tarea -->
                         <header class="text-center mb-3">
-                            <span class="badge bg-primary fs-6 mb-2">REPORTE</span>
-                            <div class="display-4 fw-bold text-primary">#{{ reporte.id }}</div>
+                            <span class="badge bg-primary fs-6 mb-2">TAREA</span>
+                            <div class="display-4 fw-bold text-primary">#{{ tarea.id }}</div>
 
-                            <!-- Estado del Reporte -->
+                            <!-- Estado de la Tarea -->
                             <div class="mt-2">
-                                {% if reporte.estado == 'PENDIENTE' %}
+                                {% if tarea.estado == 'PENDIENTE' %}
                                     <span class="badge bg-warning text-dark fs-6">
                                         <i class="bi bi-clock-history me-1"></i>
                                         Pendiente
                                     </span>
-                                {% elif reporte.estado == 'PROCESANDO' %}
+                                {% elif tarea.estado == 'PROCESANDO' %}
                                     <span class="badge bg-info text-dark fs-6">
                                         <i class="bi bi-hourglass-split me-1"></i>
                                         Procesando
                                     </span>
-                                {% elif reporte.estado == 'COMPLETADO' %}
+                                {% elif tarea.estado == 'COMPLETADO' %}
                                     <span class="badge bg-success fs-6">
                                         <i class="bi bi-check-circle me-1"></i>
                                         Completado
                                     </span>
-                                {% elif reporte.estado == 'ERROR' %}
+                                {% elif tarea.estado == 'ERROR' %}
                                     <span class="badge bg-danger fs-6">
                                         <i class="bi bi-exclamation-triangle me-1"></i>
                                         Error
@@ -68,7 +64,7 @@
                                 {% else %}
                                     <span class="badge bg-secondary fs-6">
                                         <i class="bi bi-question-circle me-1"></i>
-                                        {{ reporte.estado }}
+                                        {{ tarea.estado }}
                                     </span>
                                 {% endif %}
                             </div>
@@ -76,55 +72,39 @@
 
                         <hr>
 
-                        <!-- Fecha de Inicio -->
+                        <!-- Tipo de tarea -->
+                        <div class="bg-light rounded p-2 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-tag text-primary fs-4 me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Tipo</small>
+                                    <strong>{{ tarea.get_tipo_display }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fecha de creacion -->
                         <div class="bg-light rounded p-2 mb-3">
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-calendar-check text-success fs-4 me-2"></i>
                                 <div>
-                                    <small class="text-muted d-block">Fecha Inicio</small>
+                                    <small class="text-muted d-block">Fecha de Creacion</small>
                                     <strong>
-                                        <time datetime="{{ reporte.fecha_inicio|date:'Y-m-d' }}">
-                                            {{ reporte.fecha_inicio|date:"d/m/Y" }}
+                                        <time datetime="{{ tarea.fecha_creacion|date:'Y-m-d' }}">
+                                            {{ tarea.fecha_creacion|date:"d/m/Y H:i" }}
                                         </time>
                                     </strong>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Fecha de Fin -->
-                        <div class="bg-light rounded p-2 mb-3">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-calendar-x text-danger fs-4 me-2"></i>
-                                <div>
-                                    <small class="text-muted d-block">Fecha Fin</small>
-                                    <strong>
-                                        <time datetime="{{ reporte.fecha_fin|date:'Y-m-d' }}">
-                                            {{ reporte.fecha_fin|date:"d/m/Y" }}
-                                        </time>
-                                    </strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Filtros aplicados -->
+                        <!-- Progreso -->
                         <div class="bg-light rounded p-2">
-                            <div class="d-flex align-items-start">
-                                <i class="bi bi-funnel text-primary fs-4 me-2"></i>
-                                <div class="flex-grow-1">
-                                    <small class="text-muted d-block">Filtros aplicados</small>
-                                    {% if reporte.filtros_aplicados.exists %}
-                                        <div class="d-flex flex-wrap gap-1 mt-1">
-                                            {% for filtro in reporte.filtros_aplicados.all %}
-                                                <span class="badge bg-primary bg-opacity-75 small">
-                                                    {{ filtro.valor_filtro.nombre }}
-                                                </span>
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <span class="text-muted small">
-                                            <i class="bi bi-dash me-1"></i>Sin filtros (todos los estados)
-                                        </span>
-                                    {% endif %}
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-bar-chart text-info fs-4 me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Progreso</small>
+                                    <strong>{{ tarea.progreso_actual }}/{{ tarea.progreso_total }}</strong>
                                 </div>
                             </div>
                         </div>
@@ -133,20 +113,11 @@
                     <!-- Footer con acciones -->
                     <footer class="card-footer bg-light">
                         <div class="d-flex gap-2 justify-content-center flex-wrap">
-                            <a href="{% url 'detalle_reporte_vtex' reporte.id %}" class="btn btn-primary btn-sm">
+                            <a href="{% url 'detalle_tarea_catalogacion' tarea.id %}" class="btn btn-primary btn-sm">
                                 <i class="bi bi-eye me-1"></i>
                                 Ver
                             </a>
-                            {% if reporte.estado == 'ERROR' %}
-                            <form method="post" action="{% url 'reintentar_reporte_vtex' reporte.id %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-warning btn-sm">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>
-                                    Reintentar
-                                </button>
-                            </form>
-                            {% endif %}
-                            <a href="{% url 'eliminar_reporte_vtex' reporte.id %}" class="btn btn-outline-danger btn-sm">
+                            <a href="{% url 'eliminar_tarea_catalogacion' tarea.id %}" class="btn btn-outline-danger btn-sm">
                                 <i class="bi bi-trash me-1"></i>
                                 Eliminar
                             </a>
@@ -157,9 +128,9 @@
             {% endfor %}
         </section>
 
-        <!-- Paginación si existe -->
+        <!-- Paginacion si existe -->
         {% if is_paginated %}
-        <nav aria-label="Paginación de reportes" class="mt-5">
+        <nav aria-label="Paginacion de tareas" class="mt-5">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
@@ -176,7 +147,7 @@
 
                 <li class="page-item active">
                     <span class="page-link">
-                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        Pagina {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
                     </span>
                 </li>
 
@@ -197,14 +168,14 @@
         {% endif %}
 
     {% else %}
-        <!-- Estado vacío -->
+        <!-- Estado vacio -->
         <section class="text-center py-5 my-5">
             <i class="bi bi-inbox display-1 text-muted"></i>
-            <h3 class="mt-4 text-muted">No hay reportes generados</h3>
-            <p class="lead text-muted mb-4">Comienza creando tu primer reporte</p>
-            <a href="{% url 'generar_reporte_vtex' %}" class="btn btn-primary btn-lg px-5 shadow">
-                <i class="bi bi-plus-circle me-2"></i>
-                Crear Primer Reporte
+            <h3 class="mt-4 text-muted">No hay tareas de catalogacion</h3>
+            <p class="lead text-muted mb-4">Las tareas apareceran aqui cuando ejecutes una busqueda o actualizacion</p>
+            <a href="{% url 'home_catalogacion' %}" class="btn btn-primary btn-lg px-5 shadow">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver al inicio
             </a>
         </section>
     {% endif %}

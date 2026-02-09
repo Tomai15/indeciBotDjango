@@ -643,3 +643,62 @@ class TransaccionVtex(models.Model):
 
     def pedido_marketplace(self) -> bool:
         return not self.pedido_electro() and not self.pedido_food()
+
+
+# =============================================================================
+# MODELOS DE CATALOGACION
+# =============================================================================
+
+class UsuarioCarrefourWeb(models.Model):
+    """Credenciales para login en carrefour.com.ar via Playwright."""
+
+    email = models.CharField(max_length=200)
+    clave = models.CharField(max_length=200)
+
+    class Meta:
+        verbose_name = "Usuario Carrefour Web"
+        verbose_name_plural = "Usuarios Carrefour Web"
+
+    def __str__(self) -> str:
+        return f"Credenciales Carrefour - {self.email}"
+
+
+class TareaCatalogacion(models.Model):
+    """Trackea ejecuciones de tareas de catalogacion (busqueda EANs, categorias, sellers, etc.)."""
+
+    class Estado(models.TextChoices):
+        PENDIENTE = 'PENDIENTE', _('Pendiente')
+        PROCESANDO = 'PROCESANDO', _('Procesando')
+        COMPLETADO = 'COMPLETADO', _('Completado')
+        ERROR = 'ERROR', _('Error')
+
+    class TipoTarea(models.TextChoices):
+        BUSQUEDA_EANS = 'BUSQUEDA_EANS', _('Busqueda EANs')
+        BUSQUEDA_CATEGORIAS = 'BUSQUEDA_CATEGORIAS', _('Busqueda Categorias')
+        SELLERS_EXTERNOS = 'SELLERS_EXTERNOS', _('Sellers Externos')
+        SELLERS_NO_CARREFOUR = 'SELLERS_NO_CARREFOUR', _('Sellers No Carrefour')
+        ACTUALIZAR_MODAL = 'ACTUALIZAR_MODAL', _('Actualizar Modal')
+
+    tipo = models.CharField(max_length=30, choices=TipoTarea.choices)
+    estado = models.CharField(max_length=15, choices=Estado.choices, default=Estado.PENDIENTE)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    logs = models.TextField(blank=True, default='')
+    progreso_actual = models.IntegerField(default=0)
+    progreso_total = models.IntegerField(default=0)
+    archivo_resultado = models.FileField(upload_to='catalogacion/', null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Tarea de Catalogacion"
+        verbose_name_plural = "Tareas de Catalogacion"
+        ordering = ['-id']
+
+    def __str__(self) -> str:
+        return f"Tarea #{self.id} - {self.get_tipo_display()} ({self.get_estado_display()})"
+
+    def agregar_log(self, mensaje: str) -> None:
+        """Agrega un mensaje al log y guarda en DB."""
+        if self.logs:
+            self.logs += f"\n{mensaje}"
+        else:
+            self.logs = mensaje
+        self.save(update_fields=['logs'])

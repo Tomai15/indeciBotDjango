@@ -1,0 +1,44 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Catalogacion / Marketplace - Sistema de Reportes{% endblock %}
+
+{% block content %}
+<section class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+    <article class="text-center">
+        <h1 class="display-4 fw-bold text-success mb-4">
+            Catalogacion / Marketplace
+        </h1>
+
+        <p class="lead text-muted mb-5">
+            Busqueda de productos, categorias y actualizaciones de catalogo
+        </p>
+
+        <nav aria-label="Opciones de catalogacion">
+            <a href="{% url 'busqueda_eans' %}" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-upc-scan me-2"></i>
+                Busqueda EANs
+            </a>
+            <a href="{% url 'busqueda_categorias' %}" class="btn btn-success btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-folder2-open me-2"></i>
+                Busqueda Categorias
+            </a>
+            <a href="{% url 'sellers_externos' %}" class="btn btn-info btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-shop me-2"></i>
+                Sellers Externos
+            </a>
+            <a href="{% url 'sellers_no_carrefour' %}" class="btn btn-secondary btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-shop-window me-2"></i>
+                Sellers No Carrefour
+            </a>
+            <a href="{% url 'actualizar_modal' %}" class="btn btn-warning btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-truck me-2"></i>
+                Actualizar Modal Logistica
+            </a>
+            <a href="{% url 'lista_tareas_catalogacion' %}" class="btn btn-outline-dark btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-list-task me-2"></i>
+                Historial de Tareas
+            </a>
+        </nav>
+    </article>
+</section>
+{% endblock %}

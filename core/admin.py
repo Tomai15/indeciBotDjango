@@ -18,6 +18,8 @@ from core.models import (
     TipoFiltroVtex,
     ValorFiltroVtex,
     FiltroReporteVtex,
+    UsuarioCarrefourWeb,
+    TareaCatalogacion,
 )
 
 # Register your models here.
@@ -84,3 +86,19 @@ class FiltroReporteVtexAdmin(admin.ModelAdmin):
     search_fields = ['reporte__id']
     ordering = ['-reporte__id']
     raw_id_fields = ['reporte']
+
+
+# =============================================================================
+# CATALOGACION
+# =============================================================================
+
+@admin.register(UsuarioCarrefourWeb)
+class UsuarioCarrefourWebAdmin(admin.ModelAdmin):
+    list_display = ['email']
+
+
+@admin.register(TareaCatalogacion)
+class TareaCatalogacionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'tipo', 'estado', 'fecha_creacion', 'progreso_actual', 'progreso_total']
+    list_filter = ['tipo', 'estado']
+    ordering = ['-id']

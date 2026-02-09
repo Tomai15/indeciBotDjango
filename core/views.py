@@ -15,8 +15,9 @@ from django_q.tasks import async_task
 
 from core.models import (
     ReportePayway, ReporteVtex, ReporteCDP, ReporteJanis, Cruce,
-    UsuarioPayway, UsuarioCDP,
-    ValorFiltroVtex, FiltroReporteVtex
+    UsuarioPayway, UsuarioCDP, UsuarioCarrefourWeb,
+    ValorFiltroVtex, FiltroReporteVtex,
+    TareaCatalogacion
 )
 from core.forms import (
     GenerarReportePaywayForm,
@@ -25,14 +26,30 @@ from core.forms import (
     GenerarReporteJanisForm,
     GenerarCruceForm,
     CredencialesPaywayForm,
-    CredencialesCDPForm
+    CredencialesCDPForm,
+    CredencialesCarrefourWebForm,
+    BusquedaEansForm,
+    BusquedaCategoriasForm,
+    SellersExternosForm,
+    SellersNoCarrefourForm,
+    ActualizarModalForm
 )
 from datetime import date
+import csv
+import pandas as pd
 
 
 # Create your views here.
 def home(request: HttpRequest) -> HttpResponse:
     return render(request, 'core/home.html')
+
+
+def home_ecommerce(request: HttpRequest) -> HttpResponse:
+    return render(request, 'core/homeEcommerce.html')
+
+
+def home_catalogacion(request: HttpRequest) -> HttpResponse:
+    return render(request, 'core/homeCatalogacion.html')
 
 class reportePaywayListView(ListView):
     model = ReportePayway
@@ -280,16 +297,15 @@ def generar_reporte_vtex_view(request: HttpRequest) -> HttpResponse:
 
 def ajustes_view(request: HttpRequest) -> HttpResponse:
     """
-    Vista para gestionar credenciales de Payway y CDP.
+    Vista para gestionar credenciales de Payway, CDP y Carrefour Web.
 
-    Permite ver y editar las credenciales de ambas plataformas.
+    Permite ver y editar las credenciales de todas las plataformas.
     """
-    # Obtener o crear instancias de credenciales
     credenciales_payway = UsuarioPayway.objects.first()
     credenciales_cdp = UsuarioCDP.objects.first()
+    credenciales_carrefour = UsuarioCarrefourWeb.objects.first()
 
     if request.method == 'POST':
-        # Determinar qué formulario se envió
         if 'payway_submit' in request.POST:
             form_payway = CredencialesPaywayForm(request.POST, instance=credenciales_payway)
 
@@ -298,8 +314,8 @@ def ajustes_view(request: HttpRequest) -> HttpResponse:
                 messages.success(request, 'Credenciales de Payway actualizadas exitosamente.')
                 return redirect('ajustes')
 
-            # Si hay errores, mantener el otro formulario sin cambios
             form_cdp = CredencialesCDPForm(instance=credenciales_cdp)
+            form_carrefour = CredencialesCarrefourWebForm(instance=credenciales_carrefour)
 
         elif 'cdp_submit' in request.POST:
             form_cdp = CredencialesCDPForm(request.POST, instance=credenciales_cdp)
@@ -309,24 +325,37 @@ def ajustes_view(request: HttpRequest) -> HttpResponse:
                 messages.success(request, 'Credenciales de CDP actualizadas exitosamente.')
                 return redirect('ajustes')
 
-            # Si hay errores, mantener el otro formulario sin cambios
             form_payway = CredencialesPaywayForm(instance=credenciales_payway)
+            form_carrefour = CredencialesCarrefourWebForm(instance=credenciales_carrefour)
 
-        else:
-            # No debería llegar aquí, pero por seguridad
+        elif 'carrefour_submit' in request.POST:
+            form_carrefour = CredencialesCarrefourWebForm(request.POST, instance=credenciales_carrefour)
+
+            if form_carrefour.is_valid():
+                form_carrefour.save()
+                messages.success(request, 'Credenciales de Carrefour Web actualizadas exitosamente.')
+                return redirect('ajustes')
+
             form_payway = CredencialesPaywayForm(instance=credenciales_payway)
             form_cdp = CredencialesCDPForm(instance=credenciales_cdp)
 
+        else:
+            form_payway = CredencialesPaywayForm(instance=credenciales_payway)
+            form_cdp = CredencialesCDPForm(instance=credenciales_cdp)
+            form_carrefour = CredencialesCarrefourWebForm(instance=credenciales_carrefour)
+
     else:
-        # GET request - mostrar formularios
         form_payway = CredencialesPaywayForm(instance=credenciales_payway)
         form_cdp = CredencialesCDPForm(instance=credenciales_cdp)
+        form_carrefour = CredencialesCarrefourWebForm(instance=credenciales_carrefour)
 
     context = {
         'form_payway': form_payway,
         'form_cdp': form_cdp,
+        'form_carrefour': form_carrefour,
         'tiene_payway': credenciales_payway is not None,
         'tiene_cdp': credenciales_cdp is not None,
+        'tiene_carrefour': credenciales_carrefour is not None,
     }
 
     return render(request, 'core/ajustes.html', context)
@@ -961,3 +990,222 @@ class CruceDeleteView(ReporteDeleteMixin, DeleteView):
         response = super(DeleteView, self).form_valid(form)
         messages.success(self.request, f'Cruce #{cruce_id} eliminado correctamente.')
         return response
+
+
+# =============================================================================
+# CATALOGACION - VIEWS
+# =============================================================================
+
+class TareaCatalogacionListView(ListView):
+    model = TareaCatalogacion
+    paginate_by = 50
+    template_name = 'core/Catalogacion/listaTareas.html'
+    ordering = ['-id']
+
+
+class TareaCatalogacionDetailView(DetailView):
+    model = TareaCatalogacion
+    template_name = 'core/Catalogacion/detalleTarea.html'
+    context_object_name = 'tarea'
+
+
+class TareaCatalogacionDeleteView(DeleteView):
+    model = TareaCatalogacion
+    template_name = 'core/confirm_delete.html'
+    success_url = reverse_lazy('lista_tareas_catalogacion')
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Tarea #{self.object.id} eliminada correctamente.")
+        return super().form_valid(form)
+
+
+def descargar_resultado_tarea(request: HttpRequest, pk: int) -> HttpResponse:
+    tarea = get_object_or_404(TareaCatalogacion, pk=pk)
+    if not tarea.archivo_resultado:
+        raise Http404("No hay archivo de resultado")
+    ruta = tarea.archivo_resultado.path
+    if not os.path.exists(ruta):
+        raise Http404("El archivo no existe")
+    return FileResponse(
+        open(ruta, 'rb'),
+        as_attachment=True,
+        filename=os.path.basename(ruta)
+    )
+
+
+def actualizar_modal_view(request: HttpRequest) -> HttpResponse:
+    if request.method == 'POST':
+        form = ActualizarModalForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = request.FILES['archivo_excel']
+            try:
+                df = pd.read_excel(archivo)
+                columnas = [c.strip().lower() for c in df.columns]
+                df.columns = columnas
+
+                if 'skuid' not in columnas or 'modal logistica' not in columnas:
+                    messages.error(request, "El Excel debe tener las columnas 'skuid' y 'modal logistica'")
+                    return redirect('actualizar_modal')
+
+                valores_validos = {'FIREARMS', 'GLASS'}
+                lista_skus = []
+                for _, row in df.iterrows():
+                    skuid = str(row['skuid']).strip()
+                    modal = str(row['modal logistica']).strip().upper()
+                    if not skuid or skuid == 'nan':
+                        continue
+                    if modal not in valores_validos:
+                        messages.error(request, f"Valor invalido '{modal}' para SKU {skuid}. Solo FIREARMS o GLASS.")
+                        return redirect('actualizar_modal')
+                    lista_skus.append({'skuid': skuid, 'modal': modal})
+
+                if not lista_skus:
+                    messages.error(request, "El archivo no contiene datos validos.")
+                    return redirect('actualizar_modal')
+
+                tarea = TareaCatalogacion.objects.create(
+                    tipo=TareaCatalogacion.TipoTarea.ACTUALIZAR_MODAL,
+                    progreso_total=len(lista_skus)
+                )
+                async_task('core.tasks.actualizar_modal_async', tarea.id, lista_skus)
+                messages.success(request, f"Tarea #{tarea.id} creada. Procesando {len(lista_skus)} SKUs.")
+                return redirect('detalle_tarea_catalogacion', pk=tarea.id)
+
+            except Exception as e:
+                messages.error(request, f"Error leyendo Excel: {e}")
+                return redirect('actualizar_modal')
+    else:
+        form = ActualizarModalForm()
+    return render(request, 'core/Catalogacion/actualizarModal.html', {'form': form})
+
+
+def busqueda_eans_view(request: HttpRequest) -> HttpResponse:
+    if request.method == 'POST':
+        form = BusquedaEansForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = request.FILES['archivo_csv']
+            try:
+                stream = archivo.read().decode('utf-8').splitlines()
+                reader = csv.reader(stream)
+                next(reader, None)
+                eans = [row[0].strip() for row in reader if row and row[0].strip()]
+            except Exception as e:
+                messages.error(request, f"Error leyendo CSV: {e}")
+                return redirect('busqueda_eans')
+
+            if not eans:
+                messages.error(request, "El archivo no contiene EANs.")
+                return redirect('busqueda_eans')
+
+            direccion = form.cleaned_data['direccion']
+            tipo_regio = form.cleaned_data['tipo_regio']
+            n_workers = int(form.cleaned_data['cantidad_workers'])
+
+            tarea = TareaCatalogacion.objects.create(
+                tipo=TareaCatalogacion.TipoTarea.BUSQUEDA_EANS,
+                progreso_total=len(eans)
+            )
+            async_task('core.tasks.busqueda_eans_async', tarea.id, eans, direccion, tipo_regio, n_workers)
+            messages.success(request, f"Tarea #{tarea.id} creada. Buscando {len(eans)} EANs.")
+            return redirect('detalle_tarea_catalogacion', pk=tarea.id)
+    else:
+        form = BusquedaEansForm()
+    return render(request, 'core/Catalogacion/busquedaEans.html', {'form': form})
+
+
+def busqueda_categorias_view(request: HttpRequest) -> HttpResponse:
+    if request.method == 'POST':
+        form = BusquedaCategoriasForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = request.FILES['archivo_csv']
+            try:
+                stream = archivo.read().decode('utf-8').splitlines()
+                reader = csv.reader(stream)
+                next(reader, None)
+                categorias = [row[0].strip() for row in reader if row and row[0].strip()]
+            except Exception as e:
+                messages.error(request, f"Error leyendo CSV: {e}")
+                return redirect('busqueda_categorias')
+
+            direcciones = request.POST.getlist('direcciones[]')
+            if not direcciones or not any(d.strip() for d in direcciones):
+                messages.error(request, "Agrega al menos una direccion.")
+                return redirect('busqueda_categorias')
+
+            direcciones = [d.strip() for d in direcciones if d.strip()]
+            tipo_regio = form.cleaned_data['tipo_regio']
+
+            tarea = TareaCatalogacion.objects.create(
+                tipo=TareaCatalogacion.TipoTarea.BUSQUEDA_CATEGORIAS,
+                progreso_total=len(direcciones) * len(categorias)
+            )
+            async_task('core.tasks.busqueda_categorias_async', tarea.id, direcciones, categorias, tipo_regio)
+            messages.success(request, f"Tarea #{tarea.id} creada. Procesando {len(categorias)} categorias en {len(direcciones)} direcciones.")
+            return redirect('detalle_tarea_catalogacion', pk=tarea.id)
+    else:
+        form = BusquedaCategoriasForm()
+    return render(request, 'core/Catalogacion/busquedaCategorias.html', {'form': form})
+
+
+def sellers_externos_view(request: HttpRequest) -> HttpResponse:
+    if request.method == 'POST':
+        form = SellersExternosForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = request.FILES['archivo_csv']
+            try:
+                stream = archivo.read().decode('utf-8').splitlines()
+                reader = csv.reader(stream)
+                next(reader, None)
+                colecciones = [row[0].strip() for row in reader if row and row[0].strip()]
+            except Exception as e:
+                messages.error(request, f"Error leyendo CSV: {e}")
+                return redirect('sellers_externos')
+
+            if not colecciones:
+                messages.error(request, "El archivo no contiene colecciones.")
+                return redirect('sellers_externos')
+
+            tarea = TareaCatalogacion.objects.create(
+                tipo=TareaCatalogacion.TipoTarea.SELLERS_EXTERNOS,
+                progreso_total=len(colecciones)
+            )
+            async_task('core.tasks.sellers_externos_async', tarea.id, colecciones)
+            messages.success(request, f"Tarea #{tarea.id} creada. Procesando {len(colecciones)} colecciones.")
+            return redirect('detalle_tarea_catalogacion', pk=tarea.id)
+    else:
+        form = SellersExternosForm()
+    return render(request, 'core/Catalogacion/sellersExternos.html', {'form': form})
+
+
+def sellers_no_carrefour_view(request: HttpRequest) -> HttpResponse:
+    if request.method == 'POST':
+        form = SellersNoCarrefourForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = request.FILES['archivo_csv']
+            try:
+                df = pd.read_csv(archivo)
+                diccionario = {}
+                for col in ['Fravega', 'Megatone', 'Provincia', 'OnCity']:
+                    if col in df.columns:
+                        valores = df[col].dropna().astype(str).str.strip().tolist()
+                        if valores:
+                            diccionario[col] = valores
+            except Exception as e:
+                messages.error(request, f"Error leyendo CSV: {e}")
+                return redirect('sellers_no_carrefour')
+
+            if not diccionario:
+                messages.error(request, "No se encontraron columnas validas (Fravega, Megatone, Provincia, OnCity).")
+                return redirect('sellers_no_carrefour')
+
+            total = sum(len(v) for v in diccionario.values())
+            tarea = TareaCatalogacion.objects.create(
+                tipo=TareaCatalogacion.TipoTarea.SELLERS_NO_CARREFOUR,
+                progreso_total=total
+            )
+            async_task('core.tasks.sellers_no_carrefour_async', tarea.id, diccionario)
+            messages.success(request, f"Tarea #{tarea.id} creada. Procesando {total} sellers.")
+            return redirect('detalle_tarea_catalogacion', pk=tarea.id)
+    else:
+        form = SellersNoCarrefourForm()
+    return render(request, 'core/Catalogacion/sellersNoCarrefour.html', {'form': form})

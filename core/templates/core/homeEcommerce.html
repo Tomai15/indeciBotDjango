@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Ecommerce Sistemas - Sistema de Reportes{% endblock %}
+
+{% block content %}
+<section class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+    <article class="text-center">
+        <h1 class="display-4 fw-bold text-primary mb-4">
+            Ecommerce Sistemas
+        </h1>
+
+        <p class="lead text-muted mb-5">
+            Gestiona y genera reportes de transacciones de ecommerce de forma sencilla
+        </p>
+
+        <nav aria-label="Opciones de reportes">
+            <a href="{% url 'lista_reportes' %}" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                Gestionar Reportes Payway
+            </a>
+            <a href="{% url 'lista_reportes_vtex' %}" class="btn btn-success btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                Gestionar Reportes VTEX
+            </a>
+            <a href="{% url 'lista_reportes_cdp' %}" class="btn btn-info btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                Gestionar Reportes CDP
+            </a>
+            <a href="{% url 'lista_cruces' %}" class="btn btn-warning btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-intersect me-2"></i>
+                Gestionar Cruces
+            </a>
+            <a href="{% url 'lista_reportes_janis' %}" class="btn btn-secondary btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                Gestionar Reportes Janis
+            </a>
+        </nav>
+    </article>
+</section>
+{% endblock %}

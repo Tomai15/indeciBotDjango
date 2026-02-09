@@ -5,40 +5,24 @@
 {% block content %}
 <section class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
     <article class="text-center">
-        <!-- Título de bienvenida -->
         <h1 class="display-4 fw-bold text-primary mb-4">
             Bienvenido al Sistema de Reportes
         </h1>
 
         <p class="lead text-muted mb-5">
-            Gestiona y genera reportes de transacciones de ecommerce de forma sencilla
+            Selecciona un modulo para continuar
         </p>
 
-        <!-- Botones de navegación -->
-        <nav aria-label="Opciones de reportes">
-            <a href="{% url 'lista_reportes' %}" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
-                <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                Gestionar Reportes Payway
+        <nav aria-label="Modulos del sistema">
+            <a href="{% url 'home_ecommerce' %}" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-cart3 me-2"></i>
+                Modulo Ecommerce Sistemas
             </a>
-            <a href="{% url 'lista_reportes_vtex' %}" class="btn btn-success btn-lg px-5 py-3 shadow-lg">
-                <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                Gestionar Reportes VTEX
-            </a>
-            <a href="{% url 'lista_reportes_cdp' %}" class="btn btn-info btn-lg px-5 py-3 shadow-lg">
-                <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                Gestionar Reportes CDP
-            </a>
-            <a href="{% url 'lista_cruces' %}" class="btn btn-warning btn-lg px-5 py-3 shadow-lg">
-                <i class="bi bi-intersect me-2"></i>
-                Gestionar Cruces
-            </a>
-            <a href="{% url 'lista_reportes_janis' %}" class="btn btn-secondary btn-lg px-5 py-3 shadow-lg">
-                <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                Gestionar Reportes Janis
+            <a href="{% url 'home_catalogacion' %}" class="btn btn-success btn-lg px-5 py-3 shadow-lg">
+                <i class="bi bi-search me-2"></i>
+                Modulo Catalogacion / Marketplace
             </a>
         </nav>
     </article>
 </section>
 {% endblock %}
-
-

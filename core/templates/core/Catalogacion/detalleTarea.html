@@ -1,0 +1,169 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Detalle Tarea #{{ tarea.id }}{% endblock %}
+
+{% block content %}
+<article class="container py-5">
+    <!-- Header con boton volver -->
+    <header class="row mb-4">
+        <div class="col-12 mb-3">
+            <a href="{% url 'lista_tareas_catalogacion' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver a historial
+            </a>
+        </div>
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold text-primary">
+                <i class="bi bi-list-task me-2"></i>
+                Tarea #{{ tarea.id }}
+            </h1>
+            <p class="text-muted">Detalle y progreso de la tarea de catalogacion</p>
+        </div>
+        <div class="col-md-4 text-end d-flex align-items-center justify-content-end gap-2">
+            {% if tarea.archivo_resultado %}
+            <a href="{% url 'descargar_resultado_tarea' tarea.id %}" class="btn btn-success btn-lg shadow">
+                <i class="bi bi-file-earmark-arrow-down me-2"></i>
+                Descargar Resultado
+            </a>
+            {% endif %}
+            <a href="{% url 'eliminar_tarea_catalogacion' tarea.id %}" class="btn btn-outline-danger btn-lg">
+                <i class="bi bi-trash me-2"></i>
+                Eliminar
+            </a>
+        </div>
+    </header>
+
+    <!-- Informacion de la tarea -->
+    <section class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-tag text-primary fs-1 me-3"></i>
+                        <div>
+                            <small class="text-muted d-block">Tipo de Tarea</small>
+                            <h4 class="mb-0 fw-bold">{{ tarea.get_tipo_display }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-success">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-calendar-check text-success fs-1 me-3"></i>
+                        <div>
+                            <small class="text-muted d-block">Fecha de Creacion</small>
+                            <h4 class="mb-0 fw-bold">
+                                <time datetime="{{ tarea.fecha_creacion|date:'Y-m-d' }}">
+                                    {{ tarea.fecha_creacion|date:"d/m/Y H:i" }}
+                                </time>
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm {% if tarea.estado == 'COMPLETADO' %}border-success{% elif tarea.estado == 'ERROR' %}border-danger{% elif tarea.estado == 'PROCESANDO' %}border-info{% else %}border-warning{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        {% if tarea.estado == 'PENDIENTE' %}
+                            <i class="bi bi-clock-history text-warning fs-1 me-3"></i>
+                        {% elif tarea.estado == 'PROCESANDO' %}
+                            <i class="bi bi-hourglass-split text-info fs-1 me-3"></i>
+                        {% elif tarea.estado == 'COMPLETADO' %}
+                            <i class="bi bi-check-circle text-success fs-1 me-3"></i>
+                        {% elif tarea.estado == 'ERROR' %}
+                            <i class="bi bi-exclamation-triangle text-danger fs-1 me-3"></i>
+                        {% endif %}
+                        <div>
+                            <small class="text-muted d-block">Estado</small>
+                            <h4 class="mb-0 fw-bold">
+                                {% if tarea.estado == 'PENDIENTE' %}
+                                    <span class="badge bg-warning text-dark fs-6">Pendiente</span>
+                                {% elif tarea.estado == 'PROCESANDO' %}
+                                    <span class="badge bg-info text-dark fs-6">Procesando</span>
+                                {% elif tarea.estado == 'COMPLETADO' %}
+                                    <span class="badge bg-success fs-6">Completado</span>
+                                {% elif tarea.estado == 'ERROR' %}
+                                    <span class="badge bg-danger fs-6">Error</span>
+                                {% else %}
+                                    <span class="badge bg-secondary fs-6">{{ tarea.estado }}</span>
+                                {% endif %}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Barra de progreso -->
+    <section class="card shadow-sm mb-4">
+        <header class="card-header bg-primary text-white">
+            <h2 class="h5 mb-0">
+                <i class="bi bi-bar-chart me-2"></i>
+                Progreso
+            </h2>
+        </header>
+        <div class="card-body">
+            {% if tarea.progreso_total > 0 %}
+                {% widthratio tarea.progreso_actual tarea.progreso_total 100 as porcentaje %}
+            {% endif %}
+            <div class="progress" style="height: 30px;">
+                <div class="progress-bar {% if tarea.estado == 'COMPLETADO' %}bg-success{% elif tarea.estado == 'PROCESANDO' %}bg-info progress-bar-striped progress-bar-animated{% elif tarea.estado == 'ERROR' %}bg-danger{% else %}bg-warning{% endif %} fs-6 fw-bold"
+                     role="progressbar"
+                     style="width: {% if tarea.progreso_total > 0 %}{{ porcentaje }}{% else %}0{% endif %}%"
+                     aria-valuenow="{{ tarea.progreso_actual }}"
+                     aria-valuemin="0"
+                     aria-valuemax="{{ tarea.progreso_total }}">
+                    {{ tarea.progreso_actual }} / {{ tarea.progreso_total }}
+                </div>
+            </div>
+            <p class="text-muted mt-2 mb-0">
+                {% if tarea.progreso_total > 0 %}
+                    Progreso: {{ tarea.progreso_actual }} de {{ tarea.progreso_total }} ({% widthratio tarea.progreso_actual tarea.progreso_total 100 %}%)
+                {% else %}
+                    Sin progreso registrado
+                {% endif %}
+            </p>
+        </div>
+    </section>
+
+    <!-- Logs -->
+    <section class="card shadow-sm mb-4">
+        <header class="card-header bg-dark text-white">
+            <h2 class="h5 mb-0">
+                <i class="bi bi-terminal me-2"></i>
+                Logs
+            </h2>
+        </header>
+        <div class="card-body p-0">
+            <pre class="mb-0 p-3" style="max-height: 400px; overflow-y: auto; background-color: #1e1e1e; color: #d4d4d4; font-size: 0.85rem;">{{ tarea.logs|default:"Sin logs disponibles." }}</pre>
+        </div>
+    </section>
+
+    <!-- Boton de descarga (tambien abajo para mayor visibilidad) -->
+    {% if tarea.archivo_resultado %}
+    <div class="text-center mb-4">
+        <a href="{% url 'descargar_resultado_tarea' tarea.id %}" class="btn btn-success btn-lg shadow px-5">
+            <i class="bi bi-file-earmark-arrow-down me-2"></i>
+            Descargar Resultado
+        </a>
+    </div>
+    {% endif %}
+</article>
+{% endblock %}
+
+{% block extra_js %}
+{% if tarea.estado == 'PENDIENTE' or tarea.estado == 'PROCESANDO' %}
+<script>
+    // Auto-refresh cada 5 segundos mientras la tarea esta en progreso
+    setTimeout(function() {
+        location.reload();
+    }, 5000);
+</script>
+{% endif %}
+{% endblock %}

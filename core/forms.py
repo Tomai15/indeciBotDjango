@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from datetime import date
 from core.models import (
     UsuarioPayway, UsuarioCDP, ReporteVtex, ReportePayway, ReporteCDP, ReporteJanis,
-    TipoFiltroVtex, ValorFiltroVtex
+    TipoFiltroVtex, ValorFiltroVtex, UsuarioCarrefourWeb
 )
 
 
@@ -371,3 +371,80 @@ class GenerarCruceForm(forms.Form):
             )
 
         return cleaned_data
+
+
+class CredencialesCarrefourWebForm(forms.ModelForm):
+    """Formulario para editar credenciales de Carrefour Web."""
+
+    class Meta:
+        model = UsuarioCarrefourWeb
+        fields = ['email', 'clave']
+        labels = {
+            'email': 'Email Carrefour',
+            'clave': 'Contraseña Carrefour'
+        }
+        widgets = {
+            'email': forms.TextInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'ejemplo@mail.com'
+            }),
+            'clave': forms.PasswordInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': '••••••••',
+                'render_value': True
+            }),
+        }
+
+
+class BusquedaEansForm(forms.Form):
+    archivo_csv = forms.FileField(
+        label="Archivo CSV con EANs",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.csv'})
+    )
+    direccion = forms.CharField(
+        label="Direccion de regio",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Av. del Libertador 1345'})
+    )
+    tipo_regio = forms.ChoiceField(
+        label="Tipo de regio",
+        choices=[('envio', 'Envio a domicilio'), ('retiro', 'Retiro (Primera tienda)')],
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    cantidad_workers = forms.ChoiceField(
+        label="Cantidad de busquedas en paralelo",
+        choices=[(str(i), f'{i} worker(s)') for i in range(1, 6)],
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+
+class BusquedaCategoriasForm(forms.Form):
+    archivo_csv = forms.FileField(
+        label="Archivo CSV con categorias",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.csv'})
+    )
+    tipo_regio = forms.ChoiceField(
+        label="Tipo de regio",
+        choices=[('envio', 'Envio a domicilio'), ('retiro', 'Retiro (Primera tienda)')],
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+
+class SellersExternosForm(forms.Form):
+    archivo_csv = forms.FileField(
+        label="Archivo CSV con colecciones",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.csv'})
+    )
+
+
+class SellersNoCarrefourForm(forms.Form):
+    archivo_csv = forms.FileField(
+        label="Archivo CSV con sellers",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.csv'})
+    )
+
+
+class ActualizarModalForm(forms.Form):
+    archivo_excel = forms.FileField(
+        label="Archivo Excel (.xlsx)",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.xlsx'})
+    )

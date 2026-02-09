@@ -1,0 +1,159 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Busqueda Sellers No Carrefour{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header con boton volver -->
+    <header class="row mb-4">
+        <div class="col-12 mb-3">
+            <a href="{% url 'home_catalogacion' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver al inicio
+            </a>
+        </div>
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-primary">
+                <i class="bi bi-shop-window me-2"></i>
+                Busqueda Sellers No Carrefour
+            </h1>
+            <p class="text-muted">Subi tu archivo CSV con los datos de sellers no Carrefour para buscar</p>
+        </div>
+    </header>
+
+    <!-- Mensajes de Django -->
+    {% if messages %}
+        <div class="row mb-4">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {% if message.tags == 'error' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-2">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-upload me-2"></i>
+                        Subir archivo CSV
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- Archivo CSV -->
+                        <div class="mb-4">
+                            <label for="csv_file" class="form-label fs-5 fw-bold">
+                                <i class="bi bi-file-earmark-csv text-success me-2"></i>
+                                Archivo CSV con datos de sellers
+                            </label>
+                            <input class="form-control" type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                El CSV debe contener las siguientes columnas: <strong>Fravega</strong>, <strong>Megatone</strong>, <strong>Provincia</strong>, <strong>OnCity</strong>
+                            </div>
+                        </div>
+
+                        <!-- Tabla explicativa de columnas -->
+                        <div class="mb-4">
+                            <div class="alert alert-info" role="alert">
+                                <h6 class="alert-heading fw-bold">
+                                    <i class="bi bi-table me-2"></i>
+                                    Formato del archivo CSV
+                                </h6>
+                                <table class="table table-sm table-bordered mb-0 mt-2 bg-white">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Columna</th>
+                                            <th>Descripcion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Fravega</strong></td>
+                                            <td>Identificador o URL del producto en Fravega</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Megatone</strong></td>
+                                            <td>Identificador o URL del producto en Megatone</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Provincia</strong></td>
+                                            <td>Provincia donde se realiza la busqueda</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>OnCity</strong></td>
+                                            <td>Identificador o URL del producto en OnCity</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Botones de accion -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                                <i class="bi bi-search me-2"></i>
+                                Buscar Sellers
+                            </button>
+                            <a href="{% url 'home_catalogacion' %}" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna lateral con informacion -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Informacion importante
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>El archivo debe ser formato <strong>.csv</strong></small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Debe contener las 4 columnas: Fravega, Megatone, Provincia, OnCity</small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>La tarea se procesara de forma asincrona</small>
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Podras ver el progreso en el <a href="{% url 'lista_tareas_catalogacion' %}">historial de tareas</a></small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

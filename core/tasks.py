@@ -307,3 +307,80 @@ def generar_cruce_async(cruce_id: int, reporte_vtex_id: int | None = None, repor
     except Exception as e:
         logger.error(f"[Django-Q] Error al generar cruce: {e}", exc_info=True)
         raise
+
+
+from core.services.ActualizarModalService import ActualizarModalService
+from core.models import TareaCatalogacion
+
+def actualizar_modal_async(tarea_id: int, lista_skus: list) -> int:
+    """Actualiza el modal logistico de SKUs via API VTEX."""
+    logger.info(f"[Django-Q] Iniciando actualizacion de modal para tarea #{tarea_id}")
+    try:
+        tarea = TareaCatalogacion.objects.get(id=tarea_id)
+        servicio = ActualizarModalService()
+        async_to_sync(servicio.ejecutar)(tarea, lista_skus)
+        logger.info(f"[Django-Q] Tarea #{tarea_id} finalizada")
+        return tarea_id
+    except Exception as e:
+        logger.error(f"[Django-Q] Error en tarea #{tarea_id}: {e}", exc_info=True)
+        raise
+
+
+def busqueda_eans_async(tarea_id: int, eans: list, direccion: str, tipo_regio: str, n_workers: int) -> int:
+    """Busqueda concurrente de EANs en Carrefour."""
+    logger.info(f"[Django-Q] Iniciando busqueda de EANs para tarea #{tarea_id}")
+    try:
+        tarea = TareaCatalogacion.objects.get(id=tarea_id)
+        from core.services.BusquedaEanService import BusquedaEanService
+        servicio = BusquedaEanService()
+        async_to_sync(servicio.ejecutar)(tarea, eans, direccion, tipo_regio, n_workers)
+        logger.info(f"[Django-Q] Tarea #{tarea_id} finalizada")
+        return tarea_id
+    except Exception as e:
+        logger.error(f"[Django-Q] Error en tarea #{tarea_id}: {e}", exc_info=True)
+        raise
+
+
+def busqueda_categorias_async(tarea_id: int, direcciones: list, categorias: list, tipo_regio: str) -> int:
+    """Busqueda concurrente de categorias en Carrefour."""
+    logger.info(f"[Django-Q] Iniciando busqueda de categorias para tarea #{tarea_id}")
+    try:
+        tarea = TareaCatalogacion.objects.get(id=tarea_id)
+        from core.services.BusquedaCategoriaService import BusquedaCategoriaService
+        servicio = BusquedaCategoriaService()
+        async_to_sync(servicio.ejecutar)(tarea, direcciones, categorias, tipo_regio)
+        logger.info(f"[Django-Q] Tarea #{tarea_id} finalizada")
+        return tarea_id
+    except Exception as e:
+        logger.error(f"[Django-Q] Error en tarea #{tarea_id}: {e}", exc_info=True)
+        raise
+
+
+def sellers_externos_async(tarea_id: int, colecciones: list) -> int:
+    """Busqueda de productos en colecciones de sellers externos."""
+    logger.info(f"[Django-Q] Iniciando busqueda de sellers externos para tarea #{tarea_id}")
+    try:
+        tarea = TareaCatalogacion.objects.get(id=tarea_id)
+        from core.services.SellersExternosService import SellersExternosService
+        servicio = SellersExternosService()
+        async_to_sync(servicio.ejecutar_carrefour)(tarea, colecciones)
+        logger.info(f"[Django-Q] Tarea #{tarea_id} finalizada")
+        return tarea_id
+    except Exception as e:
+        logger.error(f"[Django-Q] Error en tarea #{tarea_id}: {e}", exc_info=True)
+        raise
+
+
+def sellers_no_carrefour_async(tarea_id: int, diccionario_sellers: dict) -> int:
+    """Busqueda de productos en sellers no Carrefour (Fravega, Megatone, OnCity, Provincia)."""
+    logger.info(f"[Django-Q] Iniciando busqueda sellers no carrefour para tarea #{tarea_id}")
+    try:
+        tarea = TareaCatalogacion.objects.get(id=tarea_id)
+        from core.services.SellersExternosService import SellersExternosService
+        servicio = SellersExternosService()
+        async_to_sync(servicio.ejecutar_no_carrefour)(tarea, diccionario_sellers)
+        logger.info(f"[Django-Q] Tarea #{tarea_id} finalizada")
+        return tarea_id
+    except Exception as e:
+        logger.error(f"[Django-Q] Error en tarea #{tarea_id}: {e}", exc_info=True)
+        raise

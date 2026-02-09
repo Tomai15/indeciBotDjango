@@ -1,0 +1,180 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Busqueda de Categorias{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header con boton volver -->
+    <header class="row mb-4">
+        <div class="col-12 mb-3">
+            <a href="{% url 'home_catalogacion' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver al inicio
+            </a>
+        </div>
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-primary">
+                <i class="bi bi-folder2-open me-2"></i>
+                Busqueda de Categorias
+            </h1>
+            <p class="text-muted">Subi tu CSV y agrega todas las direcciones que quieras procesar</p>
+        </div>
+    </header>
+
+    <!-- Mensajes de Django -->
+    {% if messages %}
+        <div class="row mb-4">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {% if message.tags == 'error' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-2">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Configuracion de Busqueda
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- Archivo CSV -->
+                        <div class="mb-4">
+                            <label for="csv_file" class="form-label fs-5 fw-bold">
+                                <i class="bi bi-file-earmark-csv text-success me-2"></i>
+                                Archivo CSV con categorias
+                            </label>
+                            <input class="form-control" type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Archivo CSV con las categorias a buscar
+                            </div>
+                        </div>
+
+                        <!-- Tipo de regio -->
+                        <div class="mb-4">
+                            <label for="tipo_regio" class="form-label fs-5 fw-bold">
+                                <i class="bi bi-signpost-2 text-info me-2"></i>
+                                Tipo de regio
+                            </label>
+                            <select class="form-select" id="tipo_regio" name="tipo_regio" required>
+                                <option value="envio">Envio a domicilio</option>
+                                <option value="retiro">Retiro (Primera tienda que aparece)</option>
+                            </select>
+                        </div>
+
+                        <!-- Contenedor dinamico de direcciones -->
+                        <div class="mb-4">
+                            <label class="form-label fs-5 fw-bold">
+                                <i class="bi bi-geo-alt text-danger me-2"></i>
+                                Direcciones
+                            </label>
+                            <div id="direcciones-container">
+                                <div class="mb-3 direccion-group">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                                        <input type="text" name="direcciones[]" class="form-control" placeholder="Ej: Calle Falsa 123, Buenos Aires" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" id="agregar-direccion" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Agregar mas direcciones
+                            </button>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Botones de accion -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                                <i class="bi bi-search me-2"></i>
+                                Procesar Categorias
+                            </button>
+                            <a href="{% url 'home_catalogacion' %}" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna lateral con informacion -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Informacion importante
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>El archivo debe ser formato <strong>.csv</strong></small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Podes agregar multiples direcciones para procesar</small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>La tarea se procesara de forma asincrona</small>
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Podras ver el progreso en el <a href="{% url 'lista_tareas_catalogacion' %}">historial de tareas</a></small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('agregar-direccion').addEventListener('click', function() {
+        const container = document.getElementById('direcciones-container');
+        const nueva = document.createElement('div');
+        nueva.className = 'mb-3 direccion-group';
+        nueva.innerHTML = `
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                <input type="text" name="direcciones[]" class="form-control" placeholder="Ej: Calle Falsa 123, Buenos Aires" required>
+                <button type="button" class="btn btn-outline-danger btn-quitar-direccion" title="Quitar direccion">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(nueva);
+
+        // Agregar evento para quitar la direccion
+        nueva.querySelector('.btn-quitar-direccion').addEventListener('click', function() {
+            nueva.remove();
+        });
+    });
+</script>
+{% endblock %}

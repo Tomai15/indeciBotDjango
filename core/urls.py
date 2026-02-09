@@ -5,6 +5,8 @@ from . import views
 urlpatterns = [
     # General
     path("", views.home, name="home"),
+    path("ecommerce/", views.home_ecommerce, name="home_ecommerce"),
+    path("catalogacion-marketplace/", views.home_catalogacion, name="home_catalogacion"),
     path("ajustes", views.ajustes_view, name="ajustes"),
 
     # Payway
@@ -47,4 +49,15 @@ urlpatterns = [
     path("cruces/<int:pk>/exportar/", views.exportar_cruce_excel, name="exportar_cruce_excel"),
     path("cruces/<int:pk>/reintentar/", views.CruceRetryView.as_view(), name="reintentar_cruce"),
     path("cruces/<int:pk>/eliminar/", views.CruceDeleteView.as_view(), name="eliminar_cruce"),
+
+    # Catalogacion
+    path("catalogacion/", views.TareaCatalogacionListView.as_view(), name="lista_tareas_catalogacion"),
+    path("catalogacion/<int:pk>/", views.TareaCatalogacionDetailView.as_view(), name="detalle_tarea_catalogacion"),
+    path("catalogacion/<int:pk>/descargar/", views.descargar_resultado_tarea, name="descargar_resultado_tarea"),
+    path("catalogacion/<int:pk>/eliminar/", views.TareaCatalogacionDeleteView.as_view(), name="eliminar_tarea_catalogacion"),
+    path("catalogacion/busqueda-eans/", views.busqueda_eans_view, name="busqueda_eans"),
+    path("catalogacion/busqueda-categorias/", views.busqueda_categorias_view, name="busqueda_categorias"),
+    path("catalogacion/sellers-externos/", views.sellers_externos_view, name="sellers_externos"),
+    path("catalogacion/sellers-no-carrefour/", views.sellers_no_carrefour_view, name="sellers_no_carrefour"),
+    path("catalogacion/actualizar-modal/", views.actualizar_modal_view, name="actualizar_modal"),
 ]

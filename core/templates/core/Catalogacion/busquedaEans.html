@@ -1,0 +1,167 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Busqueda de EANs{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header con boton volver -->
+    <header class="row mb-4">
+        <div class="col-12 mb-3">
+            <a href="{% url 'home_catalogacion' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Volver al inicio
+            </a>
+        </div>
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-primary">
+                <i class="bi bi-upc-scan me-2"></i>
+                Busqueda de EANs
+            </h1>
+            <p class="text-muted">Subi tu archivo CSV con los EANs a buscar y configura los parametros</p>
+        </div>
+    </header>
+
+    <!-- Mensajes de Django -->
+    {% if messages %}
+        <div class="row mb-4">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {% if message.tags == 'error' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-2">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Configuracion de Busqueda
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- Archivo CSV -->
+                        <div class="mb-4">
+                            <label for="csv_file" class="form-label fs-5 fw-bold">
+                                <i class="bi bi-file-earmark-csv text-success me-2"></i>
+                                Archivo CSV con EANs
+                            </label>
+                            <input class="form-control" type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Archivo CSV con una columna de codigos EAN
+                            </div>
+                        </div>
+
+                        <!-- Direccion de regio -->
+                        <div class="mb-4">
+                            <label for="direccion_regio" class="form-label fs-5 fw-bold">
+                                <i class="bi bi-geo-alt text-danger me-2"></i>
+                                Direccion de regio
+                            </label>
+                            <input type="text" class="form-control" id="direccion_regio" name="direccion_regio" placeholder="Ej: Calle Falsa 123, Buenos Aires" required>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Direccion para la regionalizacion de los productos
+                            </div>
+                        </div>
+
+                        <!-- Tipo de regio -->
+                        <div class="mb-4">
+                            <label for="tipo_regio" class="form-label fs-5 fw-bold">
+                                <i class="bi bi-signpost-2 text-info me-2"></i>
+                                Tipo de regio
+                            </label>
+                            <select class="form-select" id="tipo_regio" name="tipo_regio" required>
+                                <option value="envio">Envio a domicilio</option>
+                                <option value="retiro">Retiro (Primera tienda que aparece)</option>
+                            </select>
+                        </div>
+
+                        <!-- Cantidad de workers -->
+                        <div class="mb-4">
+                            <label for="cantidad_workers" class="form-label fs-5 fw-bold">
+                                <i class="bi bi-cpu text-warning me-2"></i>
+                                Cantidad de busquedas en paralelo
+                            </label>
+                            <select class="form-select" id="cantidad_workers" name="cantidad_workers" required>
+                                <option value="1">1 worker</option>
+                                <option value="2">2 workers</option>
+                                <option value="3">3 workers</option>
+                                <option value="4">4 workers</option>
+                                <option value="5">5 workers</option>
+                            </select>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                A mayor cantidad, mayor consumo de recursos del equipo
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Botones de accion -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                                <i class="bi bi-search me-2"></i>
+                                Buscar EANs
+                            </button>
+                            <a href="{% url 'home_catalogacion' %}" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna lateral con informacion -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Informacion importante
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>El archivo debe ser formato <strong>.csv</strong></small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Los EANs deben estar en la primera columna</small>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>La tarea se procesara de forma asincrona</small>
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Podras ver el progreso en el <a href="{% url 'lista_tareas_catalogacion' %}">historial de tareas</a></small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
