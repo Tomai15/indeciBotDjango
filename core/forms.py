@@ -415,6 +415,12 @@ class BusquedaEansForm(forms.Form):
         choices=[(str(i), f'{i} worker(s)') for i in range(1, 6)],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+    ver_navegador = forms.BooleanField(
+        label="Ver navegador en pantalla",
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
 
 class BusquedaCategoriasForm(forms.Form):
@@ -427,6 +433,12 @@ class BusquedaCategoriasForm(forms.Form):
         choices=[('envio', 'Envio a domicilio'), ('retiro', 'Retiro (Primera tienda)')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+    ver_navegador = forms.BooleanField(
+        label="Ver navegador en pantalla",
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
 
 class SellersExternosForm(forms.Form):
@@ -434,12 +446,24 @@ class SellersExternosForm(forms.Form):
         label="Archivo CSV con colecciones",
         widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.csv'})
     )
+    ver_navegador = forms.BooleanField(
+        label="Ver navegador en pantalla",
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
 
 class SellersNoCarrefourForm(forms.Form):
     archivo_csv = forms.FileField(
         label="Archivo CSV con sellers",
         widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.csv'})
+    )
+    ver_navegador = forms.BooleanField(
+        label="Ver navegador en pantalla",
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
 
 

@@ -39,6 +39,7 @@ class BusquedaCategoriaService:
         categorias: List[Any],
         tipo_regio: str = "retiro",
         cantidad_workers: int | None = None,
+        headless: bool = True,
     ) -> None:
         """Ejecuta la busqueda concurrente de categorias para cada direccion."""
         await sync_to_async(self._actualizar_estado)(tarea, TareaCatalogacion.Estado.PROCESANDO)
@@ -58,7 +59,7 @@ class BusquedaCategoriaService:
             workers = max(1, min(cantidad_workers or self.CANTIDAD_WORKERS_DEFAULT, 5))
 
             async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
+                browser = await p.chromium.launch(headless=headless)
                 contexto_base = await browser.new_context()
                 pagina_base = await contexto_base.new_page()
 

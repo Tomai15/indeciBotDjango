@@ -1034,6 +1034,7 @@ def descargar_resultado_tarea(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 def actualizar_modal_view(request: HttpRequest) -> HttpResponse:
+    template = 'core/Catalogacion/actualizarModal.html'
     if request.method == 'POST':
         form = ActualizarModalForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1045,7 +1046,7 @@ def actualizar_modal_view(request: HttpRequest) -> HttpResponse:
 
                 if 'skuid' not in columnas or 'modal logistica' not in columnas:
                     messages.error(request, "El Excel debe tener las columnas 'skuid' y 'modal logistica'")
-                    return redirect('actualizar_modal')
+                    return render(request, template, {'form': form})
 
                 valores_validos = {'FIREARMS', 'GLASS'}
                 lista_skus = []
@@ -1056,12 +1057,12 @@ def actualizar_modal_view(request: HttpRequest) -> HttpResponse:
                         continue
                     if modal not in valores_validos:
                         messages.error(request, f"Valor invalido '{modal}' para SKU {skuid}. Solo FIREARMS o GLASS.")
-                        return redirect('actualizar_modal')
+                        return render(request, template, {'form': form})
                     lista_skus.append({'skuid': skuid, 'modal': modal})
 
                 if not lista_skus:
                     messages.error(request, "El archivo no contiene datos validos.")
-                    return redirect('actualizar_modal')
+                    return render(request, template, {'form': form})
 
                 tarea = TareaCatalogacion.objects.create(
                     tipo=TareaCatalogacion.TipoTarea.ACTUALIZAR_MODAL,
@@ -1073,13 +1074,16 @@ def actualizar_modal_view(request: HttpRequest) -> HttpResponse:
 
             except Exception as e:
                 messages.error(request, f"Error leyendo Excel: {e}")
-                return redirect('actualizar_modal')
+                return render(request, template, {'form': form})
+        else:
+            return render(request, template, {'form': form})
     else:
         form = ActualizarModalForm()
-    return render(request, 'core/Catalogacion/actualizarModal.html', {'form': form})
+    return render(request, template, {'form': form})
 
 
 def busqueda_eans_view(request: HttpRequest) -> HttpResponse:
+    template = 'core/Catalogacion/busquedaEans.html'
     if request.method == 'POST':
         form = BusquedaEansForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1091,29 +1095,33 @@ def busqueda_eans_view(request: HttpRequest) -> HttpResponse:
                 eans = [row[0].strip() for row in reader if row and row[0].strip()]
             except Exception as e:
                 messages.error(request, f"Error leyendo CSV: {e}")
-                return redirect('busqueda_eans')
+                return render(request, template, {'form': form})
 
             if not eans:
                 messages.error(request, "El archivo no contiene EANs.")
-                return redirect('busqueda_eans')
+                return render(request, template, {'form': form})
 
             direccion = form.cleaned_data['direccion']
             tipo_regio = form.cleaned_data['tipo_regio']
             n_workers = int(form.cleaned_data['cantidad_workers'])
+            headless = not form.cleaned_data.get('ver_navegador', False)
 
             tarea = TareaCatalogacion.objects.create(
                 tipo=TareaCatalogacion.TipoTarea.BUSQUEDA_EANS,
                 progreso_total=len(eans)
             )
-            async_task('core.tasks.busqueda_eans_async', tarea.id, eans, direccion, tipo_regio, n_workers)
+            async_task('core.tasks.busqueda_eans_async', tarea.id, eans, direccion, tipo_regio, n_workers, headless)
             messages.success(request, f"Tarea #{tarea.id} creada. Buscando {len(eans)} EANs.")
             return redirect('detalle_tarea_catalogacion', pk=tarea.id)
+        else:
+            return render(request, template, {'form': form})
     else:
         form = BusquedaEansForm()
-    return render(request, 'core/Catalogacion/busquedaEans.html', {'form': form})
+    return render(request, template, {'form': form})
 
 
 def busqueda_categorias_view(request: HttpRequest) -> HttpResponse:
+    template = 'core/Catalogacion/busquedaCategorias.html'
     if request.method == 'POST':
         form = BusquedaCategoriasForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1125,29 +1133,33 @@ def busqueda_categorias_view(request: HttpRequest) -> HttpResponse:
                 categorias = [row[0].strip() for row in reader if row and row[0].strip()]
             except Exception as e:
                 messages.error(request, f"Error leyendo CSV: {e}")
-                return redirect('busqueda_categorias')
+                return render(request, template, {'form': form})
 
             direcciones = request.POST.getlist('direcciones[]')
             if not direcciones or not any(d.strip() for d in direcciones):
                 messages.error(request, "Agrega al menos una direccion.")
-                return redirect('busqueda_categorias')
+                return render(request, template, {'form': form})
 
             direcciones = [d.strip() for d in direcciones if d.strip()]
             tipo_regio = form.cleaned_data['tipo_regio']
+            headless = not form.cleaned_data.get('ver_navegador', False)
 
             tarea = TareaCatalogacion.objects.create(
                 tipo=TareaCatalogacion.TipoTarea.BUSQUEDA_CATEGORIAS,
                 progreso_total=len(direcciones) * len(categorias)
             )
-            async_task('core.tasks.busqueda_categorias_async', tarea.id, direcciones, categorias, tipo_regio)
+            async_task('core.tasks.busqueda_categorias_async', tarea.id, direcciones, categorias, tipo_regio, headless)
             messages.success(request, f"Tarea #{tarea.id} creada. Procesando {len(categorias)} categorias en {len(direcciones)} direcciones.")
             return redirect('detalle_tarea_catalogacion', pk=tarea.id)
+        else:
+            return render(request, template, {'form': form})
     else:
         form = BusquedaCategoriasForm()
-    return render(request, 'core/Catalogacion/busquedaCategorias.html', {'form': form})
+    return render(request, template, {'form': form})
 
 
 def sellers_externos_view(request: HttpRequest) -> HttpResponse:
+    template = 'core/Catalogacion/sellersExternos.html'
     if request.method == 'POST':
         form = SellersExternosForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1159,25 +1171,30 @@ def sellers_externos_view(request: HttpRequest) -> HttpResponse:
                 colecciones = [row[0].strip() for row in reader if row and row[0].strip()]
             except Exception as e:
                 messages.error(request, f"Error leyendo CSV: {e}")
-                return redirect('sellers_externos')
+                return render(request, template, {'form': form})
 
             if not colecciones:
                 messages.error(request, "El archivo no contiene colecciones.")
-                return redirect('sellers_externos')
+                return render(request, template, {'form': form})
+
+            headless = not form.cleaned_data.get('ver_navegador', False)
 
             tarea = TareaCatalogacion.objects.create(
                 tipo=TareaCatalogacion.TipoTarea.SELLERS_EXTERNOS,
                 progreso_total=len(colecciones)
             )
-            async_task('core.tasks.sellers_externos_async', tarea.id, colecciones)
+            async_task('core.tasks.sellers_externos_async', tarea.id, colecciones, headless)
             messages.success(request, f"Tarea #{tarea.id} creada. Procesando {len(colecciones)} colecciones.")
             return redirect('detalle_tarea_catalogacion', pk=tarea.id)
+        else:
+            return render(request, template, {'form': form})
     else:
         form = SellersExternosForm()
-    return render(request, 'core/Catalogacion/sellersExternos.html', {'form': form})
+    return render(request, template, {'form': form})
 
 
 def sellers_no_carrefour_view(request: HttpRequest) -> HttpResponse:
+    template = 'core/Catalogacion/sellersNoCarrefour.html'
     if request.method == 'POST':
         form = SellersNoCarrefourForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1192,20 +1209,24 @@ def sellers_no_carrefour_view(request: HttpRequest) -> HttpResponse:
                             diccionario[col] = valores
             except Exception as e:
                 messages.error(request, f"Error leyendo CSV: {e}")
-                return redirect('sellers_no_carrefour')
+                return render(request, template, {'form': form})
 
             if not diccionario:
                 messages.error(request, "No se encontraron columnas validas (Fravega, Megatone, Provincia, OnCity).")
-                return redirect('sellers_no_carrefour')
+                return render(request, template, {'form': form})
+
+            headless = not form.cleaned_data.get('ver_navegador', False)
 
             total = sum(len(v) for v in diccionario.values())
             tarea = TareaCatalogacion.objects.create(
                 tipo=TareaCatalogacion.TipoTarea.SELLERS_NO_CARREFOUR,
                 progreso_total=total
             )
-            async_task('core.tasks.sellers_no_carrefour_async', tarea.id, diccionario)
+            async_task('core.tasks.sellers_no_carrefour_async', tarea.id, diccionario, headless)
             messages.success(request, f"Tarea #{tarea.id} creada. Procesando {total} sellers.")
             return redirect('detalle_tarea_catalogacion', pk=tarea.id)
+        else:
+            return render(request, template, {'form': form})
     else:
         form = SellersNoCarrefourForm()
-    return render(request, 'core/Catalogacion/sellersNoCarrefour.html', {'form': form})
+    return render(request, template, {'form': form})

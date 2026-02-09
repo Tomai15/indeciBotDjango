@@ -30,6 +30,7 @@ class BusquedaEanService:
         direccion: str,
         tipo_regio: str,
         n_workers: int = 3,
+        headless: bool = True,
     ) -> None:
         """
         Lanza un browser headless, inicia sesion, regionaliza y luego busca cada
@@ -56,7 +57,7 @@ class BusquedaEanService:
 
         try:
             async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
+                browser = await p.chromium.launch(headless=headless)
 
                 # --- Login y regionalizacion con contexto base ---
                 base_ctx = await browser.new_context()

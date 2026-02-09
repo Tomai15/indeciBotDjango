@@ -60,14 +60,32 @@
 
                         <!-- Archivo CSV -->
                         <div class="mb-4">
-                            <label for="csv_file" class="form-label fs-5 fw-bold">
+                            <label for="{{ form.archivo_csv.id_for_label }}" class="form-label fs-5 fw-bold">
                                 <i class="bi bi-file-earmark-csv text-success me-2"></i>
-                                Archivo CSV con numeros de coleccion
+                                {{ form.archivo_csv.label }}
                             </label>
-                            <input class="form-control" type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                            {{ form.archivo_csv }}
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
                                 Archivo CSV con los numeros de coleccion a buscar
+                            </div>
+                            {% if form.archivo_csv.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.archivo_csv.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Ver navegador -->
+                        <div class="mb-4 form-check form-switch">
+                            {{ form.ver_navegador }}
+                            <label class="form-check-label fw-bold" for="{{ form.ver_navegador.id_for_label }}">
+                                <i class="bi bi-display text-secondary me-2"></i>
+                                {{ form.ver_navegador.label }}
+                            </label>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Si esta activo, podras ver el navegador ejecutando las acciones
                             </div>
                         </div>
 

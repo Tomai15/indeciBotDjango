@@ -60,58 +60,82 @@
 
                         <!-- Archivo CSV -->
                         <div class="mb-4">
-                            <label for="csv_file" class="form-label fs-5 fw-bold">
+                            <label for="{{ form.archivo_csv.id_for_label }}" class="form-label fs-5 fw-bold">
                                 <i class="bi bi-file-earmark-csv text-success me-2"></i>
-                                Archivo CSV con EANs
+                                {{ form.archivo_csv.label }}
                             </label>
-                            <input class="form-control" type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                            {{ form.archivo_csv }}
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
                                 Archivo CSV con una columna de codigos EAN
                             </div>
+                            {% if form.archivo_csv.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.archivo_csv.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <!-- Direccion de regio -->
                         <div class="mb-4">
-                            <label for="direccion_regio" class="form-label fs-5 fw-bold">
+                            <label for="{{ form.direccion.id_for_label }}" class="form-label fs-5 fw-bold">
                                 <i class="bi bi-geo-alt text-danger me-2"></i>
-                                Direccion de regio
+                                {{ form.direccion.label }}
                             </label>
-                            <input type="text" class="form-control" id="direccion_regio" name="direccion_regio" placeholder="Ej: Calle Falsa 123, Buenos Aires" required>
+                            {{ form.direccion }}
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
                                 Direccion para la regionalizacion de los productos
                             </div>
+                            {% if form.direccion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.direccion.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <!-- Tipo de regio -->
                         <div class="mb-4">
-                            <label for="tipo_regio" class="form-label fs-5 fw-bold">
+                            <label for="{{ form.tipo_regio.id_for_label }}" class="form-label fs-5 fw-bold">
                                 <i class="bi bi-signpost-2 text-info me-2"></i>
-                                Tipo de regio
+                                {{ form.tipo_regio.label }}
                             </label>
-                            <select class="form-select" id="tipo_regio" name="tipo_regio" required>
-                                <option value="envio">Envio a domicilio</option>
-                                <option value="retiro">Retiro (Primera tienda que aparece)</option>
-                            </select>
+                            {{ form.tipo_regio }}
+                            {% if form.tipo_regio.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.tipo_regio.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <!-- Cantidad de workers -->
                         <div class="mb-4">
-                            <label for="cantidad_workers" class="form-label fs-5 fw-bold">
+                            <label for="{{ form.cantidad_workers.id_for_label }}" class="form-label fs-5 fw-bold">
                                 <i class="bi bi-cpu text-warning me-2"></i>
-                                Cantidad de busquedas en paralelo
+                                {{ form.cantidad_workers.label }}
                             </label>
-                            <select class="form-select" id="cantidad_workers" name="cantidad_workers" required>
-                                <option value="1">1 worker</option>
-                                <option value="2">2 workers</option>
-                                <option value="3">3 workers</option>
-                                <option value="4">4 workers</option>
-                                <option value="5">5 workers</option>
-                            </select>
+                            {{ form.cantidad_workers }}
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
                                 A mayor cantidad, mayor consumo de recursos del equipo
+                            </div>
+                            {% if form.cantidad_workers.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.cantidad_workers.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Ver navegador -->
+                        <div class="mb-4 form-check form-switch">
+                            {{ form.ver_navegador }}
+                            <label class="form-check-label fw-bold" for="{{ form.ver_navegador.id_for_label }}">
+                                <i class="bi bi-display text-secondary me-2"></i>
+                                {{ form.ver_navegador.label }}
+                            </label>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Si esta activo, podras ver el navegador ejecutando las acciones
                             </div>
                         </div>
 

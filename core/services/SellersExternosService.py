@@ -118,7 +118,7 @@ class SellersExternosService:
     #  CARREFOUR  -  ejecutar_carrefour
     # =========================================================================
 
-    async def ejecutar_carrefour(self, tarea: TareaCatalogacion, colecciones: list[str]) -> None:
+    async def ejecutar_carrefour(self, tarea: TareaCatalogacion, colecciones: list[str], headless: bool = True) -> None:
         """
         Scraping de productos de sellers externos dentro de carrefour.com.ar por coleccion.
 
@@ -132,7 +132,7 @@ class SellersExternosService:
         try:
             async with async_playwright() as pw:
                 await self._log(tarea, "Iniciando navegador")
-                navegador = await pw.chromium.launch(headless=True)
+                navegador = await pw.chromium.launch(headless=headless)
                 contexto = await navegador.new_context()
                 pagina = await contexto.new_page()
                 lista_productos: list[dict] = []
@@ -490,6 +490,7 @@ class SellersExternosService:
         self,
         tarea: TareaCatalogacion,
         diccionario_sellers: dict[str, list[str]],
+        headless: bool = True,
     ) -> None:
         """
         Ejecuta scraping de sellers no-Carrefour (Fravega, Megatone, Oncity, Provincia).
@@ -505,19 +506,19 @@ class SellersExternosService:
 
         try:
             if "Megatone" in diccionario_sellers:
-                await self._buscar_megatone(tarea, diccionario_sellers["Megatone"])
+                await self._buscar_megatone(tarea, diccionario_sellers["Megatone"], headless)
                 await self._set_progreso(tarea, 0)
 
             if "Fravega" in diccionario_sellers:
-                await self._buscar_fravega(tarea, diccionario_sellers["Fravega"])
+                await self._buscar_fravega(tarea, diccionario_sellers["Fravega"], headless)
                 await self._set_progreso(tarea, 0)
 
             if "Oncity" in diccionario_sellers:
-                await self._buscar_oncity(tarea, diccionario_sellers["Oncity"])
+                await self._buscar_oncity(tarea, diccionario_sellers["Oncity"], headless)
                 await self._set_progreso(tarea, 0)
 
             if "Provincia" in diccionario_sellers:
-                await self._buscar_provincia(tarea, diccionario_sellers["Provincia"])
+                await self._buscar_provincia(tarea, diccionario_sellers["Provincia"], headless)
                 await self._set_progreso(tarea, 0)
 
             await self._set_estado(tarea, TareaCatalogacion.Estado.COMPLETADO)
@@ -531,10 +532,10 @@ class SellersExternosService:
     #  FRAVEGA
     # -------------------------------------------------------------------------
 
-    async def _buscar_fravega(self, tarea: TareaCatalogacion, lista_colecciones: list[str]) -> None:
+    async def _buscar_fravega(self, tarea: TareaCatalogacion, lista_colecciones: list[str], headless: bool = True) -> None:
         async with async_playwright() as pw:
             await self._log(tarea, "Iniciando navegador")
-            navegador = await pw.chromium.launch(headless=True)
+            navegador = await pw.chromium.launch(headless=headless)
             contexto = await navegador.new_context()
             pagina = await contexto.new_page()
             lista_productos: list[dict] = []
@@ -765,10 +766,10 @@ class SellersExternosService:
     #  MEGATONE
     # -------------------------------------------------------------------------
 
-    async def _buscar_megatone(self, tarea: TareaCatalogacion, lista_sellers: list[str]) -> None:
+    async def _buscar_megatone(self, tarea: TareaCatalogacion, lista_sellers: list[str], headless: bool = True) -> None:
         async with async_playwright() as pw:
             await self._log(tarea, "Iniciando navegador para Megatone")
-            navegador = await pw.chromium.launch(headless=True)
+            navegador = await pw.chromium.launch(headless=headless)
             contexto = await navegador.new_context()
             pagina = await contexto.new_page()
             lista_productos: list[dict] = []
@@ -1004,10 +1005,10 @@ class SellersExternosService:
     #  ONCITY
     # -------------------------------------------------------------------------
 
-    async def _buscar_oncity(self, tarea: TareaCatalogacion, lista_sellers: list[str]) -> None:
+    async def _buscar_oncity(self, tarea: TareaCatalogacion, lista_sellers: list[str], headless: bool = True) -> None:
         async with async_playwright() as pw:
             await self._log(tarea, "Iniciando navegador para Oncity")
-            navegador = await pw.chromium.launch(headless=True)
+            navegador = await pw.chromium.launch(headless=headless)
             contexto = await navegador.new_context()
             pagina = await contexto.new_page()
             lista_productos: list[dict] = []
@@ -1324,10 +1325,10 @@ class SellersExternosService:
     #  PROVINCIA
     # -------------------------------------------------------------------------
 
-    async def _buscar_provincia(self, tarea: TareaCatalogacion, lista_sellers: list[str]) -> None:
+    async def _buscar_provincia(self, tarea: TareaCatalogacion, lista_sellers: list[str], headless: bool = True) -> None:
         async with async_playwright() as pw:
             await self._log(tarea, "Iniciando navegador para Provincia")
-            navegador = await pw.chromium.launch(headless=True)
+            navegador = await pw.chromium.launch(headless=headless)
             contexto = await navegador.new_context()
             pagina = await contexto.new_page()
             lista_productos: list[dict] = []
