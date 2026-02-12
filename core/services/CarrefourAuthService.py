@@ -39,7 +39,10 @@ class CarrefourAuthService:
         try:
             await page.locator("input[placeholder='Ej.: ejemplo@mail.com']").fill(mail)
             await page.wait_for_timeout(2000)
+            await page.locator("input[placeholder='Ingrese su contraseña ']").click()
+            await page.wait_for_timeout(2000)
             await page.locator("input[placeholder='Ingrese su contraseña ']").fill(password)
+
             await page.wait_for_timeout(2000)
             await page.get_by_role("button", name="INICIAR SESIÓN").click()
         except Exception:
